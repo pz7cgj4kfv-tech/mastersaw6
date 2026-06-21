@@ -153,8 +153,8 @@
   .l2row .info{flex:1;min-width:0}.l2row .t{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}.l2row .s{font-size:10.5px;color:var(--ink2);font-family:var(--led)}
   .l2sel{border:1px solid var(--line);border-radius:6px;padding:6px 9px;font:inherit;font-size:11px;background:#15120f;color:var(--ink);max-width:160px}
   .l2chips{flex:none;display:flex;gap:5px}
-  .l2chip{width:32px;height:32px;border-radius:7px;background:#15120f;border:2px solid var(--c,#5a554c);color:var(--c,#9c9281);font-weight:900;font-family:"Arial Black",sans-serif;font-size:14px;box-shadow:var(--bevel);transition:.1s}
-  .l2chip.sel{background:var(--c,#5a554c);color:#15120f;box-shadow:var(--bevel),0 0 10px var(--c)}
+  .l2chip{width:34px;height:34px;border-radius:7px;background:var(--panel2);border:2px solid var(--c,#8a8276);color:var(--c,#cabfae);font-weight:900;font-family:"Arial Black",sans-serif;font-size:14px;box-shadow:var(--bevel);transition:.1s}
+  .l2chip.sel{background:var(--amber);color:#15110b;border-color:var(--amber);box-shadow:var(--bevel),0 0 12px var(--amberglow)}
   .l2chip:active{transform:translateY(1px)}
   .lufsbox{text-align:center;flex:none;width:78px}.lufsbox .v{font-family:var(--led);font-weight:700;font-size:18px;color:var(--amber);text-shadow:0 0 6px var(--amberglow)}.lufsbox .l{font-size:8.5px;color:var(--ink2);text-transform:uppercase;letter-spacing:.1em}
   .advise{flex:none;width:150px;font-size:11.5px;text-align:right;font-family:var(--led)}.advise b{font-size:15px}.advise .up{color:var(--green)}.advise .dn{color:var(--warn)}.advise .ok{color:var(--ink2)}
@@ -256,12 +256,12 @@
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
-    header{padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;gap:6px}.brand small{display:none}.albumName{max-width:64px;font-size:11px}
+    header{padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;gap:6px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}.albumName{max-width:60px;font-size:11px}
     .logo{width:28px;height:28px;font-size:13px}.brand{font-size:12px;letter-spacing:.05em}.ghost{padding:6px 8px;font-size:10px}
     .meterbar{gap:8px;padding:5px 10px;min-height:44px}.mtitle,.specmini,.corrwrap,.mexp,.goniomini{display:none}
     .mblk{width:48px}.mblk .lab{font-size:7px}.mblk .big{width:46px;font-size:12px;padding:1px 5px}.vu{width:100px;height:36px}
     main{flex-direction:column;overflow:hidden}
-    .content{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:150px}
+    .content{flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:162px}
     .rail{position:fixed;left:0;right:0;bottom:0;width:100%;flex-direction:row;z-index:35;gap:0;
       padding:6px 6px calc(6px + env(safe-area-inset-bottom,0px));border-right:none;border-top:2px solid var(--line);justify-content:space-around}
     .lv{flex:1;align-items:center;text-align:center;padding:7px 4px;gap:1px;border-radius:9px}
@@ -284,10 +284,12 @@
     .l2row{flex-wrap:wrap;gap:9px;padding:9px 11px}.l2fader{width:100%}.advise{width:auto}.l2wave{order:6}.l2chips{order:5}
     .l2row .t{font-size:12px}.l2row .s{font-size:9px}.lufsbox{width:58px}.lufsbox .v{font-size:14px}
     .tcard .trow{flex-wrap:wrap;gap:7px}.jw{width:44%}.tnm{font-size:11px}
-    .transport{bottom:calc(58px + env(safe-area-inset-bottom,0px));gap:8px;padding:7px 10px;flex-wrap:wrap}
-    .tpbtn{width:42px;height:42px}.tpbtn2{width:36px;height:36px}.ptime{min-width:0;font-size:13px}.tpnow{order:-1;width:100%}.tpnow .a{max-width:62vw}
+    .transport{bottom:calc(50px + env(safe-area-inset-bottom,0px));gap:6px 9px;padding:7px 10px;flex-wrap:wrap;z-index:30}
+    .tpbtn{width:40px;height:40px}.tpbtn2{width:34px;height:34px}.ptime{min-width:58px;font-size:12px}
+    .tpnow{display:none}label.chk{font-size:10px;letter-spacing:.02em}
     .bigplay{padding:11px 14px;font-size:13px}
-    .fab{bottom:calc(118px + env(safe-area-inset-bottom,0px))}
+    .fab{bottom:calc(152px + env(safe-area-inset-bottom,0px));z-index:60}
+    .fab .big{width:50px;height:50px;font-size:27px}.fab .sm{width:38px;height:38px;font-size:15px}
     .bigmeter{padding:18px 16px}.bmnums{gap:16px;flex-wrap:wrap}.bmnums .b{font-size:30px;min-width:0}.bmcanv{flex-direction:column}
   }
   /* boutons flottants : + (ajouter audio), 💾 (enregistrer), 📂 (ouvrir) */
@@ -312,10 +314,9 @@
  document.getElementById('pwbtn').onclick=go;
  document.getElementById('pwin').addEventListener('keydown',function(e){if(e.key==='Enter')go();});
  setTimeout(function(){document.getElementById('pwin').focus();},100);})();</script>
-
 <div class="app">
   <header class="screws">
-    <div class="logo">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small>STUDIO</small></div>
+    <div class="logo">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small>v20</small></div>
     <input class="albumName" id="albumName" value="Mon album" spellcheck="false">
     <button class="ghost" id="themeToggle" title="Jour / Nuit" style="margin-left:auto;background:var(--panel2);color:var(--brass);box-shadow:var(--bevel)">☀</button>
     <button class="ghost" id="clearBtn" title="Tout vider et repartir de zéro" style="margin-left:8px;background:var(--panel2);color:var(--ink2);box-shadow:var(--bevel)">🗑</button>
@@ -762,7 +763,7 @@ function transSug(gap,dl){const p=[];if(gap<.05)p.push('Enchaînement direct —
   if(Math.abs(dl)>2)p.push('Saut de niveau (Δ '+dl.toFixed(1)+' LUFS) — à harmoniser (Étape 2).');else p.push('Niveaux cohérents. 👍');return p.join(' ');}
 
 /* ===================== UI ===================== */
-$$('.lv').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;$$('.lv').forEach(x=>x.classList.toggle('active',x===b));
+$$('.lv').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;stopAll();setPlayIcons(false);$('#transport').classList.remove('show');$$('.lv').forEach(x=>x.classList.toggle('active',x===b));
   $('#col1').hidden=(level!==1)||!tracks.length;$('#stage1').hidden=(level!==1);$('#stage2').hidden=(level!==2);$('#col3').hidden=(level!==3);$('#stage3').hidden=(level!==3);
   if(level===1)drawBigWave();if(level===2)renderL2();if(level===3)renderL3();});
 $('#regroupBtn').onclick=()=>{regroup();renderAll();saveMeta();toast('Regroupé : '+tracks.length+' morceaux');};
