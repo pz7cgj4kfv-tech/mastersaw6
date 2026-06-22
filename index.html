@@ -300,6 +300,16 @@
   .fab .big{width:56px;height:56px;border-radius:50%;background:radial-gradient(circle at 50% 35%,#ffd27a,#d4922c 70%,#9c6f24);color:#231708;font-size:30px;font-weight:700;display:flex;align-items:center;justify-content:center;box-shadow:var(--bevel),0 5px 16px rgba(0,0,0,.45),0 0 0 2px #15110b}
   .fab .sm{width:42px;height:42px;border-radius:50%;background:var(--panel2);color:var(--brass);font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:var(--bevel),0 3px 9px rgba(0,0,0,.3);border:1px solid var(--line)}
   .fab button:active{transform:translateY(2px)}
+  .logo{cursor:pointer}
+  #about{position:fixed;inset:0;z-index:9998;background:rgba(8,6,5,.72);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:24px}
+  #about .card{max-width:340px;width:100%;background:var(--steel);background-image:var(--steel),var(--brushed);border:1px solid var(--line);border-radius:18px;box-shadow:var(--bevel),0 24px 60px rgba(0,0,0,.6);padding:28px 24px;text-align:center;color:var(--ink)}
+  #about .s6{width:62px;height:62px;margin:0 auto 14px;border-radius:14px;background:linear-gradient(180deg,#ffd27a,#d4922c 75%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#231708;box-shadow:var(--bevel),0 0 0 2px #15110b}
+  #about h4{font-size:19px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;color:#e3d8c2}
+  #about .lab{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--brass);margin-bottom:16px}
+  #about .ver{font-family:var(--led);font-size:15px;color:var(--amber);text-shadow:0 0 8px var(--amberglow);margin-bottom:4px}
+  #about .swiss{font-size:11px;letter-spacing:.1em;color:var(--ink2);margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:6px}
+  #about .swiss .cross{display:inline-flex;width:15px;height:15px;background:#d52b1e;border-radius:3px;color:#fff;align-items:center;justify-content:center;font-weight:900;font-size:11px;line-height:1}
+  #about button{padding:11px 28px;border-radius:10px;border:none;background:linear-gradient(180deg,#ffc964,#d4922c);color:#231708;font-weight:800;font-size:13px;letter-spacing:.05em;box-shadow:var(--bevel)}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -319,7 +329,7 @@
  setTimeout(function(){document.getElementById('pwin').focus();},100);})();</script>
 <div class="app">
   <header class="screws">
-    <div class="logo">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small>v20</small></div>
+    <div class="logo" id="logoBtn" title="À propos">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small id="verTag">·</small></div>
     <input class="albumName" id="albumName" value="Mon album" spellcheck="false">
     <button class="ghost" id="themeToggle" title="Jour / Nuit" style="margin-left:auto;background:var(--panel2);color:var(--brass);box-shadow:var(--bevel)">☀</button>
     <button class="ghost" id="clearBtn" title="Tout vider et repartir de zéro" style="margin-left:8px;background:var(--panel2);color:var(--ink2);box-shadow:var(--bevel)">🗑</button>
@@ -423,6 +433,14 @@
   <button class="big" id="fabAdd" title="Ajouter des fichiers audio">+</button>
 </div>
 <input type="file" id="projFile" accept=".json,application/json" hidden>
+<div id="about" hidden><div class="card">
+  <div class="s6">S6</div>
+  <h4>Master&nbsp;Saw<span style="color:var(--amber)">6</span></h4>
+  <div class="lab">Transient&nbsp;Lab'z</div>
+  <div class="ver" id="aboutVer">build 0x00</div>
+  <div class="swiss"><span class="cross">+</span> Swiss&nbsp;Made · Lausanne&nbsp;CH</div>
+  <button id="aboutClose">Fermer</button>
+</div></div>
 <div class="toast" id="toast"></div>
 <div id="hoverline"></div>
 
@@ -796,9 +814,18 @@ $('#importBtn').onclick=()=>fileInput.click();drop.onclick=()=>fileInput.click()
 function exportProject(){const data={app:'mastersaw6',v:1,album:$('#albumName').value,
   tracks:tracks.slice().sort((a,b)=>a.order-b.order).map(t=>({name:t.name,order:t.order,trimDb:t.trimDb||0,
     elected:(t.versions.find(v=>v.id===t.electedId)||{}).name,versions:t.versions.map(v=>({name:v.name,rating:v.rating||0}))}))};
-  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=(($('#albumName').value||'projet').replace(/[^\w\-]+/g,'_'))+'.mastersaw6.json';a.click();
-  toast('💾 Projet enregistré (fichier .json)');}
+  const json=JSON.stringify(data,null,2),fname=(($('#albumName').value||'projet').replace(/[^\w\-]+/g,'_'))+'.mastersaw6.json';
+  const blob=new Blob([json],{type:'application/json'});
+  // iOS / mobile : partage natif → "Enregistrer dans Fichiers" (tu choisis où). Sinon : téléchargement classique.
+  try{
+    const file=new File([blob],fname,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:fname}).then(()=>toast('💾 Projet exporté')).catch(()=>{});
+      return;
+    }
+  }catch(e){}
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=fname;document.body.appendChild(a);a.click();a.remove();
+  toast('💾 Projet enregistré (.json)');}
 function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);
   if(d.album)$('#albumName').value=d.album;
   const m={album:d.album||$('#albumName').value,ratings:{},elected:[],order:(d.tracks||[]).map(t=>t.name),trims:{}};
@@ -807,6 +834,14 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   if(versionsAll.length){versionsAll.forEach(v=>{if(m.ratings[v.name]!=null)v.rating=m.ratings[v.name];});regroup();renderAll();saveMeta();toast('📂 Projet chargé et appliqué');}
   else toast('📂 Projet chargé — re-glisse tes fichiers audio, tout se replace');
 }catch(e){toast('Fichier projet invalide');}};r.readAsText(file);}
+/* ===== Version (hexa, discret) + panneau À propos ===== */
+const APP_BUILD=22; // bump à chaque deploy
+const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
+$('#verTag').textContent=BUILD_HEX;
+$('#aboutVer').textContent='build '+BUILD_HEX;
+$('#logoBtn').onclick=()=>$('#about').hidden=false;
+$('#aboutClose').onclick=()=>$('#about').hidden=true;
+$('#about').onclick=e=>{if(e.target.id==='about')$('#about').hidden=true;};
 $('#fabAdd').onclick=()=>fileInput.click();
 $('#fabSave').onclick=exportProject;
 $('#fabOpen').onclick=()=>$('#projFile').click();
