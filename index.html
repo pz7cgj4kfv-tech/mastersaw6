@@ -163,8 +163,17 @@
   .advise{flex:none;width:150px;font-size:11.5px;text-align:right;font-family:var(--led)}.advise b{font-size:15px}.advise .up{color:var(--green)}.advise .dn{color:var(--warn)}.advise .ok{color:var(--ink2)}
   .l2play{width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#3a342e,#241f1b);font-size:17px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink);box-shadow:var(--bevel);border:1px solid var(--line)}
   .l2play.on{background:#e89113;color:#231708}
-  .l2fader{flex:none;width:130px;display:flex;flex-direction:column;align-items:center;gap:3px}
-  .l2fader input{width:120px;accent-color:var(--amber);height:5px}.l2fader .ftxt{font-size:10.5px;color:var(--amber);font-family:var(--led);font-weight:700}
+  .l2fader{flex:none;width:96px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .l2fader .ftxt{font-size:11px;color:var(--amber);font-family:var(--led);font-weight:700}
+  /* Molette rotative (style Shadow Hills) : métal brossé, pointeur ambre, drag haut/bas */
+  .knob{--rot:0deg;width:50px;height:50px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
+    background:radial-gradient(circle at 50% 36%,#626a73,#2c3138 68%,#191d22);
+    box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.20),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b}
+  .knob::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#3b424a,#22262b);box-shadow:inset 0 1px 2px rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.4)}
+  .knob .kind{position:absolute;left:50%;top:50%;width:3px;height:18px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
+  .knob:active{box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.2),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b,0 0 0 4px rgba(232,145,19,.25)}
+  body.day .knob{background:radial-gradient(circle at 50% 36%,#fdfefe,#cdd2d8 68%,#a7adb5);box-shadow:0 2px 5px rgba(20,28,40,.2),inset 0 2px 3px rgba(255,255,255,.9),inset 0 -3px 6px rgba(20,28,40,.18),0 0 0 1px #b7bdc4}
+  body.day .knob::before{background:radial-gradient(circle at 50% 34%,#fff,#e2e6ea);box-shadow:inset 0 1px 2px rgba(255,255,255,.9),inset 0 -2px 4px rgba(20,28,40,.12)}
   .reftag{font-size:10px;color:var(--amber);background:#15120f;border-radius:5px;padding:3px 8px;font-family:var(--led);border:1px solid var(--line)}
   .l2wave{width:100%;height:30px;display:block;margin-top:6px;border-radius:4px;background:#06120a;cursor:pointer;border:1px solid var(--line)}
   .tonbadge{flex:none;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#0c1208;background:var(--tc,#9bd65b);border-radius:6px;padding:5px 9px;text-align:center;min-width:74px;align-self:center}
@@ -335,6 +344,17 @@
   .plchip.orange::before{background:#ff9f43;color:#ff9f43}.plchip.orange{color:#c47d12}
   .plchip.red::before{background:#ff4b3e;color:#ff4b3e}.plchip.red{color:#d83a2e}
   body.day .plchip{background:#fff}
+  /* Tableau plateformes (analyseur) */
+  .bmplat{padding:2px 4px 10px;overflow:auto;max-height:34vh}
+  .pltab{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--led)}
+  .pltab th,.pltab td{padding:6px 9px;text-align:center;border-bottom:1px solid rgba(128,128,128,.22);white-space:nowrap}
+  .pltab th{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink2);font-weight:800}
+  .pltab td.nm,.pltab th.nm{text-align:left;font-weight:700;font-family:inherit;max-width:200px;overflow:hidden;text-overflow:ellipsis}
+  .pltab td{color:var(--ink)}
+  .pdot{display:inline-block;width:11px;height:11px;border-radius:50%;box-shadow:0 0 5px currentColor}
+  .pdot.green{background:#34d160;color:#34d160}.pdot.orange{background:#ff9f43;color:#ff9f43}.pdot.red{background:#ff4b3e;color:#ff4b3e}
+  .pllegend{display:flex;flex-wrap:wrap;gap:14px;align-items:center;font-size:10px;color:var(--ink2);padding:9px 4px 2px}
+  .pllegend .pdot{margin-right:5px}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -451,6 +471,7 @@
       <div><div class="b" id="bmCorr">—</div><div class="l">Correlation</div></div>
       <div><div class="b" id="bmBal">—</div><div class="l">Balance L/R</div></div>
     </div>
+    <div class="bmplat" id="bmPlatforms"></div>
     <div class="bmcanv"><canvas id="bigSpec" width="900" height="400"></canvas><canvas id="bigGonio" width="400" height="400"></canvas></div>
   </div>
 </div>
@@ -762,19 +783,25 @@ function renderL2(){const wrap=$('#l2rows');if(!wrap)return;wrap.innerHTML='';co
     row.innerHTML='<button class="l2play '+(playMode==='one'&&oneT&&oneT.id===t.id?'on':'')+'">▶</button><span class="num" style="background:'+col+'">'+(i+1)+'</span>'+
       '<div class="info"><div class="t">'+esc(t.name)+'</div><div class="s" title="Exact name of the chosen file">📄 <span class="fname">'+esc(v.name)+'</span></div><canvas class="l2wave" width="800" height="36"></canvas></div>'+
       '<div class="l2chips">'+t.versions.map((x,j)=>'<button class="l2chip'+(x.id===t.electedId?' sel':'')+'" data-id="'+x.id+'" style="--c:'+RC[x.rating||0]+'" title="'+esc(x.name)+(x.rating?' · '+RATE[x.rating-1]:' · unrated')+'">'+String.fromCharCode(65+j)+'</button>').join('')+'</div>'+
-      '<div class="l2fader"><input type="range" min="-12" max="12" step="0.5" value="'+(t.trimDb||0)+'"><span class="ftxt">'+(t.trimDb>0?'+':'')+(t.trimDb||0)+' dB</span></div>'+
+      '<div class="l2fader"><div class="knob" style="--rot:'+((t.trimDb||0)/12*135)+'deg" title="Drag up/down · double-click = 0 dB"><div class="kind"></div></div><span class="ftxt">'+(t.trimDb>0?'+':'')+(t.trimDb||0)+' dB</span></div>'+
       '<div class="lufsbox"><div class="v">'+eff.toFixed(1)+'</div><div class="l">LUFS'+(t.trimDb?'*':'')+'</div></div>'+
       '<div class="tonbadge" style="--tc:'+ton[0]+'" title="Tonal tendency (highs vs lows) vs the album">'+ton[1]+'</div><div class="advise">'+adv+'</div>';
     drawWave(row.querySelector('.l2wave'),v.a.peaks,true);
     row.querySelector('.l2wave').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();playOne(t,((e.clientX-r.left)/r.width)*v.buffer.duration);};
     row.querySelectorAll('.l2chip').forEach(ch=>ch.onclick=()=>{t.electedId=ch.dataset.id;const nv=verById(ch.dataset.id).v;electedNames=new Set([...electedNames].filter(n=>!t.versions.some(x=>x.name===n)));electedNames.add(nv.name);renderAll();saveMeta();});
     row.querySelector('.l2play').onclick=function(){if(playMode==='one'&&oneT&&oneT.id===t.id&&playing){pauseAll();renderL2();}else{playOne(t,cmpPos);}};
-    const rng=row.querySelector('input[type=range]'),ftxt=row.querySelector('.ftxt');
-    rng.oninput=()=>{t.trimDb=+rng.value;ftxt.textContent=(t.trimDb>0?'+':'')+t.trimDb+' dB';trimByName[t.name]=t.trimDb;
-      const ne=v.a.lufs+t.trimDb,nd=target-ne;row.querySelector('.lufsbox .v').textContent=ne.toFixed(1);
+    const knob=row.querySelector('.knob'),ftxt=row.querySelector('.ftxt');
+    function setTrim(val){val=Math.max(-12,Math.min(12,Math.round(val*2)/2));t.trimDb=val;knob.style.setProperty('--rot',(val/12*135)+'deg');
+      ftxt.textContent=(val>0?'+':'')+val+' dB';trimByName[t.name]=val;
+      const ne=v.a.lufs+val,nd=target-ne;row.querySelector('.lufsbox .v').textContent=ne.toFixed(1);
       row.querySelector('.advise').innerHTML=Math.abs(nd)<0.4?'<span class="ok">on target ✓</span>':(nd>0?'<span class="up">+'+nd.toFixed(1)+' dB</span>':'<span class="dn">'+nd.toFixed(1)+' dB</span>');
-      if(playMode==='one'&&oneT&&oneT.id===t.id&&voices[0])voices[0].g.gain.value=gainFor(v)*trimMul(t);};
-    rng.onchange=saveMeta;
+      if(playMode==='one'&&oneT&&oneT.id===t.id&&voices[0])voices[0].g.gain.value=gainFor(v)*trimMul(t);}
+    let kdrag=null;
+    knob.addEventListener('pointerdown',e=>{e.preventDefault();kdrag={y:e.clientY,v:t.trimDb||0};try{knob.setPointerCapture(e.pointerId);}catch(_){}});
+    knob.addEventListener('pointermove',e=>{if(!kdrag)return;setTrim(kdrag.v+(kdrag.y-e.clientY)*0.12);});
+    knob.addEventListener('pointerup',()=>{if(kdrag){kdrag=null;saveMeta();}});
+    knob.addEventListener('dblclick',()=>{setTrim(0);saveMeta();});
+    knob.addEventListener('wheel',e=>{e.preventDefault();setTrim((t.trimDb||0)+(e.deltaY<0?0.5:-0.5));saveMeta();},{passive:false});
     wrap.appendChild(row);});}
 function median(a){const s=a.slice().sort((x,y)=>x-y);return s[Math.floor(s.length/2)];}
 
@@ -830,7 +857,15 @@ $('#resetTrims').onclick=()=>{tracks.forEach(t=>t.trimDb=0);trimByName={};if(pla
 function applyMtog(){$('.bmnums').style.display=MTOG.nums?'flex':'none';$('#bigSpec').style.display=MTOG.spec?'block':'none';$('#bigGonio').style.display=MTOG.gonio?'block':'none';
   $$('.mtog button').forEach(b=>b.classList.toggle('on',MTOG[b.dataset.t]));}
 $$('.mtog button').forEach(b=>b.onclick=()=>{MTOG[b.dataset.t]=!MTOG[b.dataset.t];try{localStorage.setItem('ma_mtog',JSON.stringify(MTOG));}catch(e){}applyMtog();});
-$('#metExpand').onclick=()=>{$('#bigmeter').classList.add('show');applyMtog();$('#bmTag').textContent=playing?'':'(lance une lecture)';};
+function renderBmPlatforms(){const el=$('#bmPlatforms');if(!el)return;const list=(albumTracks().length?albumTracks():tracks).filter(t=>t.electedId&&verById(t.electedId));
+  if(!list.length){el.innerHTML='';return;}
+  let h='<table class="pltab"><thead><tr><th class="nm">Track</th><th>LUFS</th><th>TP</th>'+PLATFORMS.map(p=>'<th>'+p.n+'</th>').join('')+'</tr></thead><tbody>';
+  list.forEach(t=>{const v=verById(t.electedId).v,a=v.a;
+    h+='<tr><td class="nm" title="'+esc(v.name)+'">'+esc(t.name)+'</td><td>'+a.lufs.toFixed(1)+'</td><td>'+a.truePeakDb.toFixed(1)+'</td>'+
+      PLATFORMS.map(p=>{const s=platformState(a,p.t);return '<td><span class="pdot '+s[0]+'" title="'+p.n+' '+p.t+' LUFS · '+s[1]+'"></span></td>';}).join('')+'</tr>';});
+  h+='</tbody></table><div class="pllegend"><span><span class="pdot green"></span>on target</span><span><span class="pdot orange"></span>off (will be normalized)</span><span><span class="pdot red"></span>clips (TP > −1 dBTP)</span></div>';
+  el.innerHTML=h;}
+$('#metExpand').onclick=()=>{$('#bigmeter').classList.add('show');applyMtog();renderBmPlatforms();$('#bmTag').textContent=playing?'':'(start playback for live meters)';};
 $('#bmClose').onclick=()=>$('#bigmeter').classList.remove('show');
 $('#specMini').onclick=$('#gonioMini').onclick=()=>$('#metExpand').click();
 $('#metWindow').onclick=openMeterWindow;
@@ -868,7 +903,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=26; // bump à chaque deploy
+const APP_BUILD=27; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
