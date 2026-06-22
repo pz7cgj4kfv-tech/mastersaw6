@@ -165,10 +165,10 @@
   .advise{flex:none;width:150px;font-size:11.5px;text-align:right;font-family:var(--led)}.advise b{font-size:15px}.advise .up{color:var(--green)}.advise .dn{color:var(--warn)}.advise .ok{color:var(--ink2)}
   .l2play{width:44px;height:44px;border-radius:50%;background:linear-gradient(180deg,#3a342e,#241f1b);font-size:17px;display:flex;align-items:center;justify-content:center;flex:none;color:var(--ink);box-shadow:var(--bevel);border:1px solid var(--line)}
   .l2play.on{background:#e89113;color:#231708}
-  .l2fader{flex:none;width:96px;display:flex;flex-direction:column;align-items:center;gap:5px}
+  .l2fader{flex:none;width:78px;display:flex;flex-direction:column;align-items:center;gap:4px}
   .l2fader .ftxt{font-size:11px;color:var(--amber);font-family:var(--led);font-weight:700}
   /* Molette rotative (style Shadow Hills) : métal brossé, pointeur ambre, drag haut/bas */
-  .knob{--rot:0deg;width:50px;height:50px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
+  .knob{--rot:0deg;width:42px;height:42px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
     background:radial-gradient(circle at 50% 36%,#626a73,#2c3138 68%,#191d22);
     box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.20),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b}
   .knob::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#3b424a,#22262b);box-shadow:inset 0 1px 2px rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.4);z-index:1}
@@ -176,7 +176,7 @@
     background:repeating-conic-gradient(var(--ink2) 0 1.5deg,transparent 1.5deg 30deg);
     -webkit-mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px));mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px))}
   body.day .knob::after{opacity:.6}
-  .knob .kind{position:absolute;left:50%;top:50%;width:3px;height:18px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
+  .knob .kind{position:absolute;left:50%;top:50%;width:3px;height:15px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
   .knob:active{box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.2),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b,0 0 0 4px rgba(232,145,19,.25)}
   body.day .knob{background:radial-gradient(circle at 50% 36%,#fdfefe,#cdd2d8 68%,#a7adb5);box-shadow:0 2px 5px rgba(20,28,40,.2),inset 0 2px 3px rgba(255,255,255,.9),inset 0 -3px 6px rgba(20,28,40,.18),0 0 0 1px #b7bdc4}
   body.day .knob::before{background:radial-gradient(circle at 50% 34%,#fff,#e2e6ea);box-shadow:inset 0 1px 2px rgba(255,255,255,.9),inset 0 -2px 4px rgba(20,28,40,.12)}
@@ -292,7 +292,8 @@
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
-    header{padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;gap:6px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}.albumName{max-width:54px;font-size:11px}.swissmark{font-size:0;margin-left:7px}
+    header{padding:calc(7px + env(safe-area-inset-top,0px)) 9px 7px;gap:5px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}
+    header .swissmark{display:none}.albumName{flex:1;min-width:0;max-width:none;font-size:11px}#importBtn{flex:none;margin-left:6px}.logo{flex:none}
     .logo{width:28px;height:28px;font-size:13px}.brand{font-size:12px;letter-spacing:.05em}.ghost{padding:6px 8px;font-size:10px}
     .meterbar{gap:8px;padding:5px 10px;min-height:44px}.mtitle,.specmini,.corrwrap,.mexp,.goniomini{display:none}
     .mblk{width:48px}.mblk .lab{font-size:7px}.mblk .big{width:46px;font-size:12px;padding:1px 5px}.vu{width:100px;height:36px}
@@ -317,7 +318,7 @@
     .choose{min-width:0;width:38px;padding:0;font-size:0;align-self:center;height:34px}
     .choose::before{content:'✓';font-size:15px}.choose.on::before{content:'★'}
     .vtools{gap:3px}.icbtn{width:23px;height:23px;font-size:11px}.moveSel{max-width:23px;font-size:9px}
-    .l2row{flex-wrap:wrap;gap:9px;padding:9px 11px}.l2fader{width:100%}.advise{width:auto}.l2wave{order:6}.l2chips{order:5}
+    .l2row{flex-wrap:wrap;gap:9px;padding:9px 11px}.l2fader{width:auto}.advise{width:auto}.l2wave{order:6}.l2chips{order:5}
     .l2row .t{font-size:12px}.l2row .s{font-size:9px}.lufsbox{width:58px}.lufsbox .v{font-size:14px}
     .tcard .trow{flex-wrap:wrap;gap:7px}.jw{width:44%}.tnm{font-size:11px}
     .transport{bottom:calc(50px + env(safe-area-inset-bottom,0px));gap:6px 9px;padding:7px 10px;flex-wrap:wrap;z-index:30}
@@ -481,6 +482,7 @@
       <span style="color:var(--ink2);font-size:12px" id="bmTag"></span><button class="close" id="bmClose">✕</button></div>
     <div class="bmnums">
       <div><div class="b" id="bmLufs">—</div><div class="l">LUFS-M</div></div>
+      <div><div class="b" id="bmLufsI">—</div><div class="l">LUFS-I · avg</div></div>
       <div><div class="b" id="bmPeak">—</div><div class="l">Peak dB</div></div>
       <div><div class="b" id="bmDyn">—</div><div class="l">Dynamics</div></div>
       <div><div class="b" id="bmCorr">—</div><div class="l">Correlation</div></div>
@@ -492,7 +494,6 @@
 </div>
 <div class="fab">
   <button class="sm" id="fabSave" title="Save project">💾</button>
-  <button class="sm" id="fabOpen" title="Open project">📂</button>
   <button class="big" id="fabAdd" title="Add audio files">+</button>
 </div>
 <input type="file" id="projFile" accept=".json,application/json" hidden>
@@ -502,6 +503,7 @@
   <div class="lab">Transient&nbsp;Lab'z</div>
   <div class="ver" id="aboutVer">build 0x00</div>
   <div class="swiss"><span class="cross">+</span> Swiss&nbsp;Made · Lausanne&nbsp;CH</div>
+  <button id="aboutOpen" style="background:var(--panel2);color:var(--ink);border:1px solid var(--line);margin-right:8px">📂 Open a saved project</button>
   <button id="aboutClose">Close</button>
 </div></div>
 <div class="toast" id="toast"></div>
@@ -736,9 +738,9 @@ $('#tlCanvas').onclick=e=>{if(playMode!=='album')return;const target=((e.clientX
   let acc=0;const at=albumTracks();for(let i=0;i<at.length;i++){const d=verById(at[i].electedId).v.buffer.duration;if(acc+d>=target){seeking=true;startAlbumTrack(i,target-acc);setTimeout(()=>seeking=false,80);break;}acc+=d;}};
 
 /* ===================== MÈTRES (lissé) ===================== */
-let dL=0,dR=0,dLufs=-60,dPeak=-60,dDyn=0,dCorr=0,dBal=0;
-function resetMeters(){dL=dR=0;dLufs=-60;dPeak=-60;dDyn=0;dCorr=0;dBal=0;
-  $('#mLufs').textContent='—';$('#mPeak').textContent='—';$('#mDyn').textContent='—';
+let dL=0,dR=0,dLufs=-60,dPeak=-60,dDyn=0,dCorr=0,dBal=0,lufsSum=0,lufsN=0,fc=0;
+function resetMeters(){dL=dR=0;dLufs=-60;dPeak=-60;dDyn=0;dCorr=0;dBal=0;lufsSum=0;lufsN=0;
+  $('#mLufs').textContent='—';$('#mPeak').textContent='—';$('#mDyn').textContent='—';if($('#bmLufsI'))$('#bmLufsI').textContent='—';
   const vu=$('#vu');drawVU(vu.getContext('2d'),vu.width,vu.height,0,0);}
 /* VU à aiguille gradué en dBFS — échelle réelle -48..0, zone rouge dès -6 dB.
    v = position 0..1 issue de (rmsDb+54)/54 dans la loop → cohérent avec les labels. */
@@ -764,9 +766,9 @@ function loop(){const sc=$('#specMini').getContext('2d'),gc=$('#gonioMini').getC
     const peakDb=20*Math.log10(pk+1e-9),rmsAll=Math.sqrt(sum/tdL.length),dyn=Math.max(0,Math.min(30,20*Math.log10(pk/(rmsAll+1e-9))));
     const tL=Math.max(0,Math.min(1,(20*Math.log10(rmsL+1e-9)+54)/54)),tR=Math.max(0,Math.min(1,(20*Math.log10(rmsR+1e-9)+54)/54));
     dL+=(tL-dL)*(tL>dL?.5:.12);dR+=(tR-dR)*(tR>dR?.5:.12);drawVU(vuCtx,vW,vH,dL,dR);
-    if(lufsM>-60)dLufs+=(lufsM-dLufs)*.12;dPeak=Math.max(dPeak-0.4,peakDb);dDyn+=(dyn-dDyn)*.10;dCorr+=(corr-dCorr)*.15;
+    if(lufsM>-60){dLufs+=(lufsM-dLufs)*.05;if(lufsM>-50){lufsSum+=Math.pow(10,lufsM/10);lufsN++;}}dPeak=Math.max(dPeak-0.25,peakDb);dDyn+=(dyn-dDyn)*.05;dCorr+=(corr-dCorr)*.12;
     const bal=(rmsL+rmsR)>1e-6?(rmsR-rmsL)/(rmsR+rmsL):0;dBal+=(bal-dBal)*.12;
-    $('#mLufs').textContent=dLufs<-59?'—':dLufs.toFixed(1);$('#mPeak').textContent=dPeak.toFixed(1);$('#mDyn').textContent=dDyn.toFixed(1);
+    fc++;if(fc%8===0){$('#mLufs').textContent=dLufs<-59?'—':dLufs.toFixed(1);$('#mPeak').textContent=dPeak.toFixed(1);$('#mDyn').textContent=dDyn.toFixed(1);}
     $('#corrI').style.left=(50+dCorr*46)+'%';$('#corrI').style.background=dCorr<0?'#ff4b3e':(dCorr<.3?'#ffd23f':'#62f08e');
     drawSpec(sc,SW,SH,fq,72);drawGonio(gc,GW,tdL,tdR,3);
     if($('#bigmeter').classList.contains('show'))drawBig(fq,tdL,tdR);
@@ -782,8 +784,8 @@ function drawGonio(gc,GW,tdL,tdR,stepN){gc.fillStyle='rgba(4,13,7,.4)';gc.fillRe
   for(let i=0;i<tdL.length;i+=stepN){const l=tdL[i],r=tdR[i],x=(l-r)*.5*GW*.92,y=-(l+r)*.5*GW*.92,e=Math.min(1,Math.abs(l)+Math.abs(r));
     gc.fillStyle='rgba('+((90+e*165)|0)+',240,'+((120+e*40)|0)+','+(.3+e*.6)+')';gc.fillRect(x,y,1.5,1.5);}gc.restore();}
 function drawBig(fq,tdL,tdR){if(MTOG.spec){const sc=$('#bigSpec');drawSpec(sc.getContext('2d'),sc.width,sc.height,fq,150);}if(MTOG.gonio){const gc=$('#bigGonio');drawGonio(gc.getContext('2d'),gc.width,tdL,tdR,1);}
-  if(MTOG.nums){$('#bmLufs').textContent=dLufs<-59?'—':dLufs.toFixed(1);$('#bmPeak').textContent=dPeak.toFixed(1);$('#bmDyn').textContent=dDyn.toFixed(1);$('#bmCorr').textContent=dCorr.toFixed(2);
-    $('#bmBal').textContent=Math.abs(dBal)<0.03?'C':(dBal<0?'G'+Math.round(-dBal*100):'D'+Math.round(dBal*100));}}
+  if(MTOG.nums&&fc%8===0){$('#bmLufs').textContent=dLufs<-59?'—':dLufs.toFixed(1);$('#bmLufsI').textContent=lufsN?(10*Math.log10(lufsSum/lufsN)).toFixed(1):'—';$('#bmPeak').textContent=dPeak.toFixed(1);$('#bmDyn').textContent=dDyn.toFixed(1);$('#bmCorr').textContent=dCorr.toFixed(2);
+    $('#bmBal').textContent=Math.abs(dBal)<0.03?'C':(dBal<0?'L'+Math.round(-dBal*100):'R'+Math.round(dBal*100));}}
 
 /* ===================== ÉTAPE 2 ===================== */
 const RC=['#aeb4bc','#ff4d4d','#ff9f43','#ffd23f','#9bd65b','#34d160'];
@@ -924,7 +926,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=30; // bump à chaque deploy
+const APP_BUILD=31; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
@@ -933,7 +935,7 @@ $('#aboutClose').onclick=()=>$('#about').hidden=true;
 $('#about').onclick=e=>{if(e.target.id==='about')$('#about').hidden=true;};
 $('#fabAdd').onclick=()=>fileInput.click();
 $('#fabSave').onclick=exportProject;
-$('#fabOpen').onclick=()=>$('#projFile').click();
+$('#aboutOpen').onclick=()=>{$('#about').hidden=true;$('#projFile').click();};
 $('#projFile').onchange=e=>{if(e.target.files[0])importProject(e.target.files[0]);e.target.value='';};
 ['dragenter','dragover'].forEach(ev=>document.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('over');}));
 document.addEventListener('dragleave',e=>{e.preventDefault();drop.classList.remove('over');});
