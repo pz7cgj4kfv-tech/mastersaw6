@@ -236,26 +236,32 @@
   @media(max-width:760px){.sp-title{font-size:30px;letter-spacing:.28em}}
 
   /* ===== THÈME JOUR (châssis clair, fenêtres de mètres sombres comme le vrai matos) ===== */
-  body.day{--bg:#d8d2c6;--panel:#efe9dc;--panel2:#e5ded0;--panelhi:#f6f1e6;--ink:#262019;--ink2:#6f6555;--line:#c3b9a4;--brass:#8a5e1f;
-    --steel:linear-gradient(180deg,#efe8da,#dcd3c1);
-    --bevel:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -2px 4px rgba(0,0,0,.1),0 2px 5px rgba(0,0,0,.12);
-    background-image:radial-gradient(120% 90% at 50% -10%,rgba(255,255,255,.55),transparent 60%),var(--brushed)}
-  body.day .brand{color:#3a2f1c;text-shadow:none}
-  body.day .col{background:#e8e1d3}
-  body.day .lv.active{background:linear-gradient(180deg,#f6e7bf,#ecd9a4)}
-  body.day .lv.active .n{color:#8a5e1f}
-  body.day .tk.active{background:linear-gradient(180deg,#f6e7bf,#ecd9a4)}
-  body.day .tk.active .no{color:#8a5e1f;text-shadow:none}
-  body.day .vrow.audible{background:linear-gradient(180deg,#f9efd2,#f1e4bf)}
-  body.day .pick{background:linear-gradient(180deg,#f3ecdd,#dcd2bd);color:#6f6555}
-  body.day .lufsbox .v{color:#8a5e1f;text-shadow:none}
-  body.day .advise .up{color:#1c8f4f}body.day .advise .dn{color:#b5781d}
-  body.day .l2sel,body.day .moveSel{background:#fff;color:#262019}
-  body.day .albumName{background:#fff;color:#8a5e1f;box-shadow:inset 0 1px 2px rgba(0,0,0,.15)}
-  body.day .reftag{background:#fff;color:#8a5e1f}
-  body.day .vmet b{color:#262019}body.day .hero h2{text-shadow:none}
-  body.day .tsug{color:#8a5e1f}body.day .ptime{color:#8a5e1f;text-shadow:none}
-  body.day .ghost2{color:#8a5e1f}
+  /* ===== THÈME JOUR — SWISS PRECISION (blanc, alu brossé, afficheurs sombres) ===== */
+  body.day{--bg:#eceef1;--panel:#ffffff;--panel2:#f3f5f7;--panelhi:#ffffff;--ink:#1b1e22;--ink2:#878e97;--line:#dadfe4;--brass:#697079;
+    --amber:#e08a00;--amberdim:#caa86a;--amberglow:rgba(224,138,0,.30);
+    --steel:linear-gradient(180deg,#fdfdfe,#e9ecef);
+    --brushed:repeating-linear-gradient(90deg,rgba(0,0,0,.014) 0 1px,rgba(255,255,255,.65) 1px 3px);
+    --bevel:inset 0 1px 0 rgba(255,255,255,.95),0 1px 2px rgba(22,30,45,.09),0 2px 7px rgba(22,30,45,.05);
+    --screw:radial-gradient(circle at 38% 34%,#f1f3f5,#c6ccd2 62%,#a8aeb6);
+    background-image:radial-gradient(120% 90% at 50% -10%,rgba(255,255,255,.8),transparent 55%),repeating-linear-gradient(0deg,rgba(24,34,52,.020) 0 1px,transparent 1px 30px),repeating-linear-gradient(90deg,rgba(24,34,52,.020) 0 1px,transparent 1px 30px)}
+  body.day header{border-bottom:1px solid var(--line)}
+  body.day .brand{color:#1b1e22;text-shadow:none}
+  body.day .col{background:#f6f8fa}
+  body.day .lv.active{background:linear-gradient(180deg,#ffffff,#eef1f4);box-shadow:var(--bevel),inset 0 0 0 1.5px rgba(224,138,0,.35)}
+  body.day .lv.active .n{color:#e08a00}
+  body.day .lv.active .t{color:#1b1e22}
+  body.day .tk.active{background:linear-gradient(180deg,#ffffff,#f2f5f7);box-shadow:var(--bevel),0 0 0 1.5px rgba(224,138,0,.4)}
+  body.day .tk.active .no{color:#231708;text-shadow:none}
+  body.day .vrow.audible{background:#fffaf1;box-shadow:var(--bevel),0 0 0 1.5px rgba(224,138,0,.5)}
+  body.day .pick{background:linear-gradient(180deg,#ffffff,#edf0f3);color:#697079}
+  body.day .lufsbox .v{color:#e08a00;text-shadow:none}
+  body.day .advise .up{color:#1c8f4f}body.day .advise .dn{color:#c47d12}
+  body.day .l2sel,body.day .moveSel{background:#fff;color:#1b1e22}
+  body.day .albumName{background:#fff;color:#1b1e22;box-shadow:inset 0 0 0 1px var(--line)}
+  body.day .reftag{background:#fff;color:#e08a00}
+  body.day .vmet b{color:#1b1e22}body.day .hero h2{text-shadow:none}
+  body.day .tsug{color:#697079}body.day .ptime{color:#e08a00;text-shadow:none}
+  body.day .ghost2{color:#e08a00}
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
@@ -841,7 +847,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Projet chargé — re-glisse tes fichiers audio, tout se replace');
 }catch(e){toast('Fichier projet invalide');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=23; // bump à chaque deploy
+const APP_BUILD=24; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
