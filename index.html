@@ -262,6 +262,10 @@
   body.day .vmet b{color:#1b1e22}body.day .hero h2{text-shadow:none}
   body.day .tsug{color:#697079}body.day .ptime{color:#e08a00;text-shadow:none}
   body.day .ghost2{color:#e08a00}
+  body.day .choose{background:linear-gradient(180deg,#ffffff,#eef0f3);color:#1b1e22;border:1px solid var(--line)}
+  body.day .l2play{background:linear-gradient(180deg,#ffffff,#edf0f3);color:#e08a00;border:1px solid var(--line)}
+  body.day .tpbtn2{background:linear-gradient(180deg,#41474e,#23282d);color:#f3f5f7}
+  body.day .l2row .num{color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.35);box-shadow:inset 0 -2px 3px rgba(0,0,0,.15)}
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
@@ -321,6 +325,16 @@
   #about .swiss{font-size:11px;letter-spacing:.1em;color:var(--ink2);margin-bottom:20px;display:flex;align-items:center;justify-content:center;gap:6px}
   #about .swiss .cross{display:inline-flex;width:15px;height:15px;background:#d52b1e;border-radius:3px;color:#fff;align-items:center;justify-content:center;font-weight:900;font-size:11px;line-height:1}
   #about button{padding:11px 28px;border-radius:10px;border:none;background:linear-gradient(180deg,#ffc964,#d4922c);color:#231708;font-weight:800;font-size:13px;letter-spacing:.05em;box-shadow:var(--bevel)}
+  /* ===== Conformité plateformes ===== */
+  .platforms{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:11px 0 14px}
+  .platforms .pllab{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--ink2);margin-right:4px}
+  .plchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:.02em;background:var(--panel2);box-shadow:var(--bevel);border:1px solid var(--line)}
+  .plchip::before{content:'';width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 5px currentColor}
+  .plchip i{font-style:normal;font-weight:600;font-size:9.5px;font-family:var(--led);opacity:.85}
+  .plchip.green::before{background:#34d160;color:#34d160}.plchip.green{color:#1c8f4f}
+  .plchip.orange::before{background:#ff9f43;color:#ff9f43}.plchip.orange{color:#c47d12}
+  .plchip.red::before{background:#ff4b3e;color:#ff4b3e}.plchip.red{color:#d83a2e}
+  body.day .plchip{background:#fff}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -387,6 +401,7 @@
           <div style="font-size:10.5px;color:var(--ink2);margin:-6px 0 12px"><b style="color:var(--amber)">A/B/C</b> = écouter (au même instant) · <b>pastilles</b> = ton avis (rouge→vert) · <b style="color:#34d160">✓ Choisir</b> = la version gardée pour l'album · à gauche, <b>glisse</b> les morceaux pour les classer (1,2,3…)</div>
           <div class="bigwrap screws"><canvas class="bigwave" id="bigwave"></canvas>
             <div class="lab"><span id="bwCur">0:00</span><span id="bwName">—</span><span id="bwTot">0:00</span></div></div>
+          <div class="platforms" id="platforms"></div>
           <div id="vrows"></div>
         </div>
       </div>
@@ -611,7 +626,13 @@ function drawBigWave(){const t=activeTrack();if(!t)return;const v=verById(audibl
   const filePos=(playMode==='track'&&playTrackId===t.id)?Math.max(0,Math.min(v.buffer.duration,playPos()+(v.alignSec||0))):0,hx=(filePos/v.buffer.duration)*W;
   ctx.strokeStyle='#ffb43a';ctx.lineWidth=2;ctx.shadowColor='#ffb43a';ctx.shadowBlur=8;ctx.beginPath();ctx.moveTo(hx,0);ctx.lineTo(hx,H);ctx.stroke();ctx.shadowBlur=0;
   $('#bwName').textContent=v.name;$('#bwCur').textContent=fmtT(filePos);$('#bwTot').textContent=fmtT(v.buffer.duration);
-  $('#curTime').textContent=fmtT(filePos);}
+  $('#curTime').textContent=fmtT(filePos);renderPlatforms(v);}
+/* Conformité plateformes : cible LUFS + plafond True Peak -1 dBTP. vert=dans la cible · orange=hors cible (sera normalisé) · rouge=sature (TP > plafond). */
+const PLATFORMS=[{n:'Spotify',t:-14},{n:'Apple',t:-16},{n:'YouTube',t:-14},{n:'Tidal',t:-14},{n:'Club/CD',t:-9}];
+function platformState(a,t){if(a.truePeakDb>-1.0)return['red','sature'];const d=a.lufs-t;if(Math.abs(d)<=1.0)return['green','calé'];if(d>0)return['orange','+'+d.toFixed(1)+' fort'];return['orange',d.toFixed(1)+' bas'];}
+function renderPlatforms(v){const el=$('#platforms');if(!el)return;if(!v||!v.a){el.innerHTML='';return;}
+  el.innerHTML='<span class="pllab">CONFORMITÉ</span>'+PLATFORMS.map(p=>{const s=platformState(v.a,p.t);
+    return '<span class="plchip '+s[0]+'" title="'+p.n+' · cible '+p.t+' LUFS · ton TP '+v.a.truePeakDb.toFixed(1)+' dBTP">'+p.n+' <i>'+s[1]+'</i></span>';}).join('');}
 
 /* ===================== PLAYBACK ENGINE ===================== */
 let masterGain,anFFT,splitMaster,anML,anMR;
@@ -729,7 +750,7 @@ function drawBig(fq,tdL,tdR){if(MTOG.spec){const sc=$('#bigSpec');drawSpec(sc.ge
     $('#bmBal').textContent=Math.abs(dBal)<0.03?'C':(dBal<0?'G'+Math.round(-dBal*100):'D'+Math.round(dBal*100));}}
 
 /* ===================== ÉTAPE 2 ===================== */
-const RC=['#5a554c','#ff4d4d','#ff9f43','#ffd23f','#9bd65b','#34d160'];
+const RC=['#aeb4bc','#ff4d4d','#ff9f43','#ffd23f','#9bd65b','#34d160'];
 function renderL2(){const wrap=$('#l2rows');if(!wrap)return;wrap.innerHTML='';const list=tracks;
   if(!list.length){wrap.innerHTML='<div style="text-align:center;color:var(--ink2);padding:40px">Importe des morceaux d\'abord.</div>';$('#refTag').textContent='—';return;}
   const target=median(list.map(t=>verById(t.electedId).v.a.lufs));$('#refTag').textContent='médiane '+target.toFixed(1)+' LUFS';
@@ -847,7 +868,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Projet chargé — re-glisse tes fichiers audio, tout se replace');
 }catch(e){toast('Fichier projet invalide');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=24; // bump à chaque deploy
+const APP_BUILD=25; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
