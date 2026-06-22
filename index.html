@@ -444,6 +444,7 @@
         <div class="l2">
           <div class="l1head"><h3>Balance</h3>
             <span class="sub">Target <span class="reftag" id="refTag">—</span></span>
+            <button class="ghost2" id="rndSpot" title="Jump to a random spot — then switch tracks to compare their volume at the same relative position">🎲 Random spot</button>
             <button class="ghost2" id="resetTrims">↺ Reset</button></div>
           <div style="font-size:10.5px;color:var(--ink2);margin:-8px 0 14px">▶ to listen · the fader raises/lowers the volume · the hint says how much to match</div>
           <div id="l2rows"></div>
@@ -671,7 +672,7 @@ function renderPlatforms(v){const el=$('#platforms');if(!el)return;if(!v||!v.a){
 
 /* ===================== PLAYBACK ENGINE ===================== */
 let masterGain,anFFT,splitMaster,anML,anMR;
-let playMode=null,playTrackId=null,audibleId=null,voices=[],playing=false,startedAt=0,offset=0,rafId=0,albumIdx=0,seeking=false,oneT=null,cmpPos=0;
+let playMode=null,playTrackId=null,audibleId=null,voices=[],playing=false,startedAt=0,offset=0,rafId=0,albumIdx=0,seeking=false,oneT=null,cmpPos=0,cmpFrac=null;
 function buildGraph(){masterGain=audioCtx.createGain();anFFT=audioCtx.createAnalyser();anFFT.fftSize=2048;anFFT.smoothingTimeConstant=.85;
   splitMaster=audioCtx.createChannelSplitter(2);anML=audioCtx.createAnalyser();anMR=audioCtx.createAnalyser();anML.fftSize=2048;anMR.fftSize=2048;
   masterGain.connect(anFFT);anFFT.connect(audioCtx.destination);masterGain.connect(splitMaster);splitMaster.connect(anML,0);splitMaster.connect(anMR,1);}
@@ -801,9 +802,10 @@ function renderL2(){const wrap=$('#l2rows');if(!wrap)return;wrap.innerHTML='';co
       '<div class="lufsbox"><div class="v">'+eff.toFixed(1)+'</div><div class="l">LUFS'+(t.trimDb?'*':'')+'</div></div>'+
       '<div class="tonbadge" style="--tc:'+ton[0]+'" title="Tonal tendency (highs vs lows) vs the album">'+ton[1]+'</div><div class="advise">'+adv+'</div>';
     drawWave(row.querySelector('.l2wave'),v.a.peaks,true);
-    row.querySelector('.l2wave').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();playOne(t,((e.clientX-r.left)/r.width)*v.buffer.duration);};
+    row.querySelector('.l2wave').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();cmpFrac=null;playOne(t,((e.clientX-r.left)/r.width)*v.buffer.duration);};
     row.querySelectorAll('.l2chip').forEach(ch=>ch.onclick=()=>{t.electedId=ch.dataset.id;const nv=verById(ch.dataset.id).v;electedNames=new Set([...electedNames].filter(n=>!t.versions.some(x=>x.name===n)));electedNames.add(nv.name);renderAll();saveMeta();});
-    row.querySelector('.l2play').onclick=function(){if(playMode==='one'&&oneT&&oneT.id===t.id&&playing){pauseAll();renderL2();}else{playOne(t,cmpPos);}};
+    row.querySelector('.l2play').onclick=function(){if(playMode==='one'&&oneT&&oneT.id===t.id&&playing){pauseAll();renderL2();}
+      else{const sameResume=(oneT&&oneT.id===t.id);const off=(cmpFrac!=null&&!sameResume)?cmpFrac*v.buffer.duration:cmpPos;playOne(t,off);}};
     const knob=row.querySelector('.knob'),ftxt=row.querySelector('.ftxt');
     function setTrim(val){val=Math.max(-12,Math.min(12,Math.round(val*2)/2));t.trimDb=val;knob.style.setProperty('--rot',(val/12*135)+'deg');
       ftxt.textContent=(val>0?'+':'')+val+' dB';trimByName[t.name]=val;
@@ -870,6 +872,9 @@ $$('.lv').forEach(b=>b.onclick=()=>{level=+b.dataset.lv;stopAll();setPlayIcons(f
   if(level===1)drawBigWave();if(level===2)renderL2();if(level===3)renderL3();});
 $('#regroupBtn').onclick=()=>{regroup();renderAll();saveMeta();toast('Re-grouped: '+tracks.length+' tracks');};
 $('#resetTrims').onclick=()=>{tracks.forEach(t=>t.trimDb=0);trimByName={};if(playMode==='one'&&voices[0]&&oneT)voices[0].g.gain.value=gainFor(verById(oneT.electedId).v);renderL2();saveMeta();toast('Volumes reset to 0 dB');};
+$('#rndSpot').onclick=()=>{const t=(playMode==='one'&&oneT)?oneT:((activeTrack()&&activeTrack().electedId)?activeTrack():tracks.find(x=>x.electedId));
+  if(!t){toast('Import tracks first');return;}cmpFrac=0.1+Math.random()*0.8;const v=verById(t.electedId).v;playOne(t,cmpFrac*v.buffer.duration);
+  toast('🎲 Random spot · '+Math.round(cmpFrac*100)+'% — switch tracks to compare volume here');};
 function applyMtog(){$('.bmnums').style.display=MTOG.nums?'flex':'none';$('#bigSpec').style.display=MTOG.spec?'block':'none';$('#bigGonio').style.display=MTOG.gonio?'block':'none';
   $$('.mtog button').forEach(b=>b.classList.toggle('on',MTOG[b.dataset.t]));}
 $$('.mtog button').forEach(b=>b.onclick=()=>{MTOG[b.dataset.t]=!MTOG[b.dataset.t];try{localStorage.setItem('ma_mtog',JSON.stringify(MTOG));}catch(e){}applyMtog();});
@@ -919,7 +924,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=29; // bump à chaque deploy
+const APP_BUILD=30; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
