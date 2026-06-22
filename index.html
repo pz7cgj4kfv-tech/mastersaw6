@@ -152,10 +152,10 @@
 
   /* ===== ÉTAPE 2 ===== */
   .l2{max-width:920px;margin:0 auto}
-  .l2row{display:flex;align-items:center;gap:15px;background:var(--panel);box-shadow:var(--bevel);border:1px solid var(--line);border-radius:9px;padding:12px 16px;margin-bottom:11px}
+  .l2row{display:flex;align-items:center;gap:13px;background:var(--panel);box-shadow:var(--bevel);border:1px solid var(--line);border-radius:9px;padding:9px 13px;margin-bottom:8px}
   .l2row.audible{box-shadow:var(--bevel),0 0 0 2px var(--amber)}
   .l2row .num{width:30px;height:30px;border-radius:6px;color:#231708;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex:none;font-family:"Arial Black",sans-serif;box-shadow:inset 0 -2px 3px rgba(0,0,0,.3)}
-  .l2row .info{flex:1;min-width:0}.l2row .t{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}.l2row .s{font-size:10.5px;color:var(--ink2);font-family:var(--led)}
+  .l2row .info{flex:1;min-width:0}.l2row .t{font-weight:800;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}.l2row .s{font-size:10.5px;color:var(--ink2);font-family:var(--led);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}.l2row .s .fname{white-space:nowrap}
   .l2sel{border:1px solid var(--line);border-radius:6px;padding:6px 9px;font:inherit;font-size:11px;background:#15120f;color:var(--ink);max-width:160px}
   .l2chips{flex:none;display:flex;gap:5px}
   .l2chip{width:34px;height:34px;border-radius:7px;background:var(--panel2);border:2px solid var(--c,#8a8276);color:var(--c,#cabfae);font-weight:900;font-family:"Arial Black",sans-serif;font-size:14px;box-shadow:var(--bevel);transition:.1s}
@@ -168,7 +168,7 @@
   .l2fader{flex:none;width:78px;display:flex;flex-direction:column;align-items:center;gap:4px}
   .l2fader .ftxt{font-size:11px;color:var(--amber);font-family:var(--led);font-weight:700}
   /* Molette rotative (style Shadow Hills) : métal brossé, pointeur ambre, drag haut/bas */
-  .knob{--rot:0deg;width:42px;height:42px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
+  .knob{--rot:0deg;width:34px;height:34px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
     background:radial-gradient(circle at 50% 36%,#626a73,#2c3138 68%,#191d22);
     box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.20),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b}
   .knob::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#3b424a,#22262b);box-shadow:inset 0 1px 2px rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.4);z-index:1}
@@ -176,12 +176,12 @@
     background:repeating-conic-gradient(var(--ink2) 0 1.5deg,transparent 1.5deg 30deg);
     -webkit-mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px));mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px))}
   body.day .knob::after{opacity:.6}
-  .knob .kind{position:absolute;left:50%;top:50%;width:3px;height:15px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
+  .knob .kind{position:absolute;left:50%;top:50%;width:2.5px;height:12px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
   .knob:active{box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.2),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b,0 0 0 4px rgba(232,145,19,.25)}
   body.day .knob{background:radial-gradient(circle at 50% 36%,#fdfefe,#cdd2d8 68%,#a7adb5);box-shadow:0 2px 5px rgba(20,28,40,.2),inset 0 2px 3px rgba(255,255,255,.9),inset 0 -3px 6px rgba(20,28,40,.18),0 0 0 1px #b7bdc4}
   body.day .knob::before{background:radial-gradient(circle at 50% 34%,#fff,#e2e6ea);box-shadow:inset 0 1px 2px rgba(255,255,255,.9),inset 0 -2px 4px rgba(20,28,40,.12)}
   .reftag{font-size:10px;color:var(--amber);background:#15120f;border-radius:5px;padding:3px 8px;font-family:var(--led);border:1px solid var(--line)}
-  .l2wave{width:100%;height:30px;display:block;margin-top:6px;border-radius:4px;background:#06120a;cursor:pointer;border:1px solid var(--line)}
+  .l2wave{width:100%;height:24px;display:block;margin-top:5px;border-radius:4px;background:#06120a;cursor:pointer;border:1px solid var(--line)}
   .tonbadge{flex:none;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:#0c1208;background:var(--tc,#9bd65b);border-radius:6px;padding:5px 9px;text-align:center;min-width:74px;align-self:center}
 
   /* ===== ÉTAPE 3 ===== */
@@ -509,8 +509,7 @@
   </div>
 </div>
 <div class="fab">
-  <button class="sm" id="fabSave" title="Save project">💾</button>
-  <button class="big" id="fabAdd" title="Add audio files">+</button>
+  <button class="big" id="fabSave" title="Save project">💾</button>
 </div>
 <input type="file" id="projFile" accept=".json,application/json" hidden>
 <div id="about" hidden><div class="card">
@@ -821,7 +820,7 @@ function renderL2(){const wrap=$('#l2rows');if(!wrap)return;wrap.innerHTML='';co
       '<div class="tonbadge" style="--tc:'+ton[0]+'" title="Tonal tendency (highs vs lows) vs the album">'+ton[1]+'</div><div class="advise">'+adv+'</div>';
     drawWave(row.querySelector('.l2wave'),v.a.peaks,true);
     row.querySelector('.l2wave').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();cmpFrac=null;playOne(t,((e.clientX-r.left)/r.width)*v.buffer.duration);};
-    row.querySelectorAll('.l2chip').forEach(ch=>ch.onclick=()=>{t.electedId=ch.dataset.id;const nv=verById(ch.dataset.id).v;electedNames=new Set([...electedNames].filter(n=>!t.versions.some(x=>x.name===n)));electedNames.add(nv.name);renderAll();saveMeta();});
+    row.querySelectorAll('.l2chip').forEach(ch=>ch.onclick=()=>{t.electedId=ch.dataset.id;const nv=verById(ch.dataset.id).v;electedNames=new Set([...electedNames].filter(n=>!t.versions.some(x=>x.name===n)));electedNames.add(nv.name);saveMeta();renderAll();playOne(t,cmpFrac!=null?cmpFrac*nv.buffer.duration:cmpPos);});
     row.querySelector('.l2play').onclick=function(){if(playMode==='one'&&oneT&&oneT.id===t.id&&playing){pauseAll();renderL2();}
       else{const sameResume=(oneT&&oneT.id===t.id);const off=(cmpFrac!=null&&!sameResume)?cmpFrac*v.buffer.duration:cmpPos;playOne(t,off);}};
     const knob=row.querySelector('.knob'),ftxt=row.querySelector('.ftxt');
@@ -975,14 +974,13 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=34; // bump à chaque deploy
+const APP_BUILD=35; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
 $('#logoBtn').onclick=()=>$('#about').hidden=false;
 $('#aboutClose').onclick=()=>$('#about').hidden=true;
 $('#about').onclick=e=>{if(e.target.id==='about')$('#about').hidden=true;};
-$('#fabAdd').onclick=()=>fileInput.click();
 $('#fabSave').onclick=exportProject;
 $('#aboutOpen').onclick=()=>{$('#about').hidden=true;$('#projFile').click();};
 $('#projFile').onchange=e=>{if(e.target.files[0])importProject(e.target.files[0]);e.target.value='';};
