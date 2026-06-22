@@ -259,7 +259,7 @@
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
-    header{padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;gap:6px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}.albumName{max-width:60px;font-size:11px}
+    header{padding:calc(7px + env(safe-area-inset-top,0px)) 10px 7px;gap:6px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}.albumName{max-width:54px;font-size:11px}.swissmark{font-size:0;margin-left:7px}
     .logo{width:28px;height:28px;font-size:13px}.brand{font-size:12px;letter-spacing:.05em}.ghost{padding:6px 8px;font-size:10px}
     .meterbar{gap:8px;padding:5px 10px;min-height:44px}.mtitle,.specmini,.corrwrap,.mexp,.goniomini{display:none}
     .mblk{width:48px}.mblk .lab{font-size:7px}.mblk .big{width:46px;font-size:12px;padding:1px 5px}.vu{width:100px;height:36px}
@@ -301,6 +301,11 @@
   .fab .sm{width:42px;height:42px;border-radius:50%;background:var(--panel2);color:var(--brass);font-size:17px;display:flex;align-items:center;justify-content:center;box-shadow:var(--bevel),0 3px 9px rgba(0,0,0,.3);border:1px solid var(--line)}
   .fab button:active{transform:translateY(2px)}
   .logo{cursor:pointer}
+  .swissmark{display:inline-flex;align-items:center;gap:5px;font-size:9px;font-weight:800;letter-spacing:.16em;color:var(--ink2);margin-left:11px;flex:none;opacity:.85}
+  .swissmark .cross{width:13px;height:13px;background:#d52b1e;border-radius:2px;display:inline-block;position:relative;flex:none}
+  .swissmark .cross::before,.swissmark .cross::after{content:'';position:absolute;background:#fff;border-radius:1px}
+  .swissmark .cross::before{left:50%;top:3px;bottom:3px;width:3px;transform:translateX(-50%)}
+  .swissmark .cross::after{top:50%;left:3px;right:3px;height:3px;transform:translateY(-50%)}
   #about{position:fixed;inset:0;z-index:9998;background:rgba(8,6,5,.72);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:24px}
   #about .card{max-width:340px;width:100%;background:var(--steel);background-image:var(--steel),var(--brushed);border:1px solid var(--line);border-radius:18px;box-shadow:var(--bevel),0 24px 60px rgba(0,0,0,.6);padding:28px 24px;text-align:center;color:var(--ink)}
   #about .s6{width:62px;height:62px;margin:0 auto 14px;border-radius:14px;background:linear-gradient(180deg,#ffd27a,#d4922c 75%);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#231708;box-shadow:var(--bevel),0 0 0 2px #15110b}
@@ -330,6 +335,7 @@
 <div class="app">
   <header class="screws">
     <div class="logo" id="logoBtn" title="À propos">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small id="verTag">·</small></div>
+    <span class="swissmark" title="Transient Lab'z — Swiss Made, Lausanne"><i class="cross"></i>SWISS&nbsp;MADE</span>
     <input class="albumName" id="albumName" value="Mon album" spellcheck="false">
     <button class="ghost" id="themeToggle" title="Jour / Nuit" style="margin-left:auto;background:var(--panel2);color:var(--brass);box-shadow:var(--bevel)">☀</button>
     <button class="ghost" id="clearBtn" title="Tout vider et repartir de zéro" style="margin-left:8px;background:var(--panel2);color:var(--ink2);box-shadow:var(--bevel)">🗑</button>
@@ -835,7 +841,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Projet chargé — re-glisse tes fichiers audio, tout se replace');
 }catch(e){toast('Fichier projet invalide');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=22; // bump à chaque deploy
+const APP_BUILD=23; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
