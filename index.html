@@ -41,8 +41,10 @@
   /* ===== HEADER ===== */
   header{display:flex;align-items:center;gap:14px;padding:calc(10px + env(safe-area-inset-top,0px)) 22px 10px;background:var(--steel);background-image:var(--steel),var(--brushed);
     border-bottom:2px solid var(--line);box-shadow:0 3px 8px rgba(0,0,0,.5);z-index:30;position:relative}
-  .logo{width:38px;height:38px;border-radius:7px;background:linear-gradient(180deg,#e7b864,#9c6f24);display:flex;align-items:center;justify-content:center;
-    color:#231708;font-weight:900;font-size:20px;box-shadow:var(--bevel),0 0 0 2px #15110b;font-family:"Arial Black",sans-serif}
+  .logo{width:38px;height:38px;border-radius:8px;background:linear-gradient(180deg,#2a2f35,#1a1e23);display:flex;align-items:center;justify-content:center;
+    box-shadow:var(--bevel),0 0 0 1.5px #14171b}
+  .logomark{width:74%;height:74%;display:block}
+  .logomark .saw{fill:none;stroke:var(--amber);stroke-width:9;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 2px var(--amberglow))}
   .brand{font-weight:800;font-size:17px;letter-spacing:.14em;text-transform:uppercase;text-shadow:0 1px 0 #000;color:#e3d8c2}
   .brand small{font-weight:600;color:var(--brass);font-size:10px;margin-left:6px;letter-spacing:.2em}
   .albumName{font-weight:700;border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:12px;color:var(--amber);background:#15120f;
@@ -169,7 +171,11 @@
   .knob{--rot:0deg;width:50px;height:50px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;flex:none;
     background:radial-gradient(circle at 50% 36%,#626a73,#2c3138 68%,#191d22);
     box-shadow:0 2px 6px rgba(0,0,0,.45),inset 0 2px 3px rgba(255,255,255,.20),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b}
-  .knob::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#3b424a,#22262b);box-shadow:inset 0 1px 2px rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.4)}
+  .knob::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#3b424a,#22262b);box-shadow:inset 0 1px 2px rgba(255,255,255,.14),inset 0 -2px 4px rgba(0,0,0,.4);z-index:1}
+  .knob::after{content:'';position:absolute;inset:-4px;border-radius:50%;pointer-events:none;opacity:.5;
+    background:repeating-conic-gradient(var(--ink2) 0 1.5deg,transparent 1.5deg 30deg);
+    -webkit-mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px));mask:radial-gradient(circle,transparent calc(50% - 3.5px),#000 calc(50% - 3.5px))}
+  body.day .knob::after{opacity:.6}
   .knob .kind{position:absolute;left:50%;top:50%;width:3px;height:18px;background:var(--amber);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot));box-shadow:0 0 6px var(--amberglow);z-index:2}
   .knob:active{box-shadow:0 1px 3px rgba(0,0,0,.5),inset 0 2px 3px rgba(255,255,255,.2),inset 0 -4px 7px rgba(0,0,0,.55),0 0 0 2px #14171b,0 0 0 4px rgba(232,145,19,.25)}
   body.day .knob{background:radial-gradient(circle at 50% 36%,#fdfefe,#cdd2d8 68%,#a7adb5);box-shadow:0 2px 5px rgba(20,28,40,.2),inset 0 2px 3px rgba(255,255,255,.9),inset 0 -3px 6px rgba(20,28,40,.18),0 0 0 1px #b7bdc4}
@@ -187,8 +193,16 @@
   .timeline{background:#06120a;border-radius:10px;padding:13px 15px;box-shadow:inset 0 0 18px rgba(0,0,0,.7),0 0 0 2px #1c1813;margin-bottom:18px;border:1px solid var(--line)}
   .tl-canvas{width:100%;height:86px;display:block;cursor:pointer;border-radius:5px}
   .tl-info{display:flex;justify-content:space-between;color:var(--green);font-size:11px;margin-top:8px;font-family:var(--led);opacity:.85}
-  .tcard{background:var(--panel);box-shadow:var(--bevel);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:9px}
+  .tcard{background:var(--panel);box-shadow:var(--bevel);border:1px solid var(--line);border-radius:8px;margin-bottom:9px;overflow:hidden}
   .tcard .arrow{color:var(--amber)}
+  .thead{display:flex;align-items:center;gap:13px;padding:11px 14px;cursor:pointer}
+  .thead .chev{margin-left:6px;color:var(--ink2);transition:.2s;font-size:12px;flex:none}
+  .tcard.open .thead .chev{transform:rotate(180deg)}
+  .tbody{max-height:0;overflow:hidden;transition:max-height .28s ease;padding:0 14px}
+  .tcard.open .tbody{max-height:280px;padding-bottom:12px}
+  .tjoins{display:flex;gap:10px;flex-wrap:wrap}
+  .tplay{margin-top:10px;padding:8px 16px;border-radius:8px;background:#e89113;color:#231708;font-weight:800;font-size:11.5px;letter-spacing:.03em;box-shadow:var(--bevel)}
+  .tplay:active{transform:translateY(1px)}
   .trow{display:flex;align-items:center;gap:13px}
   .tnm{font-weight:800;font-size:12px;flex:1;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em;text-transform:uppercase}
   .jw{height:32px;width:120px;border-radius:5px;background:#06120a;display:block;flex:none;border:1px solid var(--line)}
@@ -327,7 +341,7 @@
   .swissmark .cross::after{top:50%;left:3px;right:3px;height:3px;transform:translateY(-50%)}
   #about{position:fixed;inset:0;z-index:9998;background:rgba(8,6,5,.72);backdrop-filter:blur(7px);display:flex;align-items:center;justify-content:center;padding:24px}
   #about .card{max-width:340px;width:100%;background:var(--steel);background-image:var(--steel),var(--brushed);border:1px solid var(--line);border-radius:18px;box-shadow:var(--bevel),0 24px 60px rgba(0,0,0,.6);padding:28px 24px;text-align:center;color:var(--ink)}
-  #about .s6{width:62px;height:62px;margin:0 auto 14px;border-radius:14px;background:#e89113;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:26px;color:#231708;box-shadow:var(--bevel),0 0 0 2px #15110b}
+  #about .s6{width:64px;height:64px;margin:0 auto 14px;border-radius:15px;background:linear-gradient(180deg,#2a2f35,#1a1e23);display:flex;align-items:center;justify-content:center;box-shadow:var(--bevel),0 0 0 1.5px #14171b}
   #about h4{font-size:19px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:3px;color:#e3d8c2}
   #about .lab{font-size:12px;letter-spacing:.28em;text-transform:uppercase;color:var(--brass);margin-bottom:16px}
   #about .ver{font-family:var(--led);font-size:15px;color:var(--amber);text-shadow:0 0 8px var(--amberglow);margin-bottom:4px}
@@ -374,7 +388,7 @@
  setTimeout(function(){document.getElementById('pwin').focus();},100);})();</script>
 <div class="app">
   <header class="screws">
-    <div class="logo" id="logoBtn" title="About">S6</div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small id="verTag">·</small></div>
+    <div class="logo" id="logoBtn" title="About"><svg class="logomark" viewBox="0 0 100 100"><path class="saw" d="M13 67 L37 33 L37 67 L61 33 L61 67 L87 33"/></svg></div><div class="brand">Master&nbsp;Saw<span style="color:var(--amber)">6</span><small id="verTag">·</small></div>
     <span class="swissmark" title="Transient Lab'z — Swiss Made, Lausanne"><i class="cross"></i>SWISS&nbsp;MADE</span>
     <input class="albumName" id="albumName" value="My album" spellcheck="false">
     <button class="ghost" id="themeToggle" title="Day / Night" style="margin-left:auto;background:var(--panel2);color:var(--brass);box-shadow:var(--bevel)">☀</button>
@@ -482,7 +496,7 @@
 </div>
 <input type="file" id="projFile" accept=".json,application/json" hidden>
 <div id="about" hidden><div class="card">
-  <div class="s6">S6</div>
+  <div class="s6"><svg class="logomark" viewBox="0 0 100 100"><path class="saw" d="M13 67 L37 33 L37 67 L61 33 L61 67 L87 33"/></svg></div>
   <h4>Master&nbsp;Saw<span style="color:var(--amber)">6</span></h4>
   <div class="lab">Transient&nbsp;Lab'z</div>
   <div class="ver" id="aboutVer">build 0x00</div>
@@ -823,13 +837,15 @@ function renderTransitions(){const list=$('#transList');if(!list)return;list.inn
   if(at.length<2){list.innerHTML='<div style="color:var(--ink2);text-align:center;padding:20px">Keep at least 2 versions.</div>';return;}
   for(let i=0;i<at.length-1;i++){const A=verById(at[i].electedId).v,B=verById(at[i+1].electedId).v;const gap=silTail(A.buffer)+silHead(B.buffer),dl=B.a.lufs-A.a.lufs;
     const c=document.createElement('div');c.className='tcard';
-    c.innerHTML='<div class="trow"><div class="tnm">'+esc(at[i].name)+' <span class="arrow">→</span> '+esc(at[i+1].name)+'</div>'+
-      '<canvas class="jw" width="360" height="56"></canvas><div class="tg"><b>'+(gap<.05?'⌣':gap.toFixed(2)+'s')+'</b></div><canvas class="jw" width="360" height="56"></canvas>'+
-      '<div class="tm">Δ LUFS <b>'+(dl>0?'+':'')+dl.toFixed(1)+'</b></div></div>'+
-      '<div class="tsug">'+transSug(gap,dl)+'</div>';
+    c.innerHTML='<div class="thead"><div class="tnm">'+esc(at[i].name)+' <span class="arrow">→</span> '+esc(at[i+1].name)+'</div>'+
+      '<div class="tg"><b>'+(gap<.05?'⌣':gap.toFixed(2)+'s')+'</b></div>'+
+      '<div class="tm">Δ LUFS <b>'+(dl>0?'+':'')+dl.toFixed(1)+'</b></div><span class="chev">▾</span></div>'+
+      '<div class="tbody"><div class="tjoins"><canvas class="jw" width="360" height="56"></canvas><canvas class="jw" width="360" height="56"></canvas></div>'+
+      '<div class="tsug">'+transSug(gap,dl)+'</div>'+
+      '<button class="tplay">▶ Play transition</button></div>';
     const cv=c.querySelectorAll('.jw');drawWave(cv[0],tailPk(A.buffer),false);drawWave(cv[1],headPk(B.buffer),false);
-    c.style.cursor='pointer';c.title='Click to hear the transition (end → start)';
-    c.onclick=()=>{$('#albumTimeline').hidden=false;startAlbumTrack(i,Math.max(0,A.buffer.duration-8));};
+    c.querySelector('.thead').onclick=()=>c.classList.toggle('open');
+    c.querySelector('.tplay').onclick=e=>{e.stopPropagation();$('#albumTimeline').hidden=false;startAlbumTrack(i,Math.max(0,A.buffer.duration-8));};
     list.appendChild(c);}}
 function drawAlbumTL(){const cv=$('#tlCanvas'),dpr=devicePixelRatio||1,W=cv.clientWidth,H=86;if(cv.width!==Math.round(W*dpr)){cv.width=W*dpr;cv.height=H*dpr;}
   const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const at=albumTracks(),tot=albumDur();if(!tot)return;let x=0,mid=H/2;
@@ -903,7 +919,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=28; // bump à chaque deploy
+const APP_BUILD=29; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
