@@ -169,7 +169,7 @@
   .l2line2{display:flex;align-items:center;gap:12px}
   .nfwrap{flex:1;min-width:60px;position:relative;padding-top:2px}
   .nfwrap::after{content:'';position:absolute;left:50%;top:5px;width:1.5px;height:9px;background:var(--ink2);opacity:.55;transform:translateX(-50%);pointer-events:none}
-  .nfader{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;margin:0}
+  .nfader{-webkit-appearance:none;appearance:none;width:100%;height:26px;background:transparent;cursor:pointer;margin:0;touch-action:pan-y}
   .nfader::-webkit-slider-runnable-track{height:7px;border-radius:4px;background:linear-gradient(180deg,#13161c,#222a39);box-shadow:inset 0 1px 2px rgba(0,0,0,.6);border:1px solid var(--line)}
   .nfader::-moz-range-track{height:7px;border-radius:4px;background:#222a39;border:1px solid var(--line)}
   .nfader::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:26px;border-radius:4px;margin-top:-10px;background:linear-gradient(90deg,#2c3138 0 40%,var(--amber) 40% 60%,#2c3138 60%);border:1px solid #14171b;box-shadow:0 2px 5px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.18)}
@@ -327,7 +327,7 @@
 
   /* ===== FORMAT TÉLÉPHONE ===== */
   @media(max-width:760px){
-    header{padding:calc(7px + env(safe-area-inset-top,0px)) 9px 7px;gap:5px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}
+    header{padding:max(env(safe-area-inset-top,0px),38px) 9px 7px;gap:5px}.brand small{margin-left:4px;font-size:8px;letter-spacing:.05em}
     header .swissmark{display:none}.albumName{flex:1;min-width:0;max-width:none;font-size:11px}#importBtn{flex:none;margin-left:6px}.logo{flex:none}
     .logo{width:28px;height:28px;font-size:13px}.brand{font-size:12px;letter-spacing:.05em}.ghost{padding:6px 8px;font-size:10px}
     .meterbar{gap:8px;padding:5px 10px;min-height:44px}.mtitle,.specmini,.corrwrap,.mexp,.goniomini{display:none}
@@ -1008,7 +1008,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=36; // bump à chaque deploy
+const APP_BUILD=37; // bump à chaque deploy
 const BUILD_HEX='0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
