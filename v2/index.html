@@ -429,6 +429,9 @@
   .fmwarn{margin-top:11px;display:flex;flex-direction:column;gap:6px}
   .fmw{font-size:10.5px;color:#c47d12;display:flex;align-items:center;gap:6px;line-height:1.3}
   .fmw b{color:var(--ink)}.fmw.ok{color:#1c8f4f}
+  /* Blind mode : cacher tout ce qui identifie une version */
+  #l1body.blind .vmet,#l1body.blind .platforms,#l1body.blind #bwName,#l1body.blind .vname .tag{visibility:hidden}
+  #blindBtn.on{background:var(--amber);color:#fff;border-color:var(--amber)}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -491,6 +494,7 @@
         <div id="l1body" hidden>
           <div class="l1head"><button class="playbig" id="trkPlay">▶</button>
             <div><h3 id="trkTitle">—</h3><span class="sub" id="trkSub"></span></div>
+            <button class="ghost2" id="blindBtn" title="Blind mode : juge à l'oreille, sans voir les noms ni les chiffres">🎭 Blind</button>
             <span class="curtime led" id="curTime">0:00</span></div>
           <div style="font-size:10.5px;color:var(--ink2);margin:-6px 0 12px"><b style="color:var(--amber)">A/B/C</b> = listen (same instant) · <b>dots</b> = your rating (red→green) · <b style="color:#34d160">✓ Choose</b> = the version kept for the album · on the left, <b>use ▲▼</b> to order the tracks (1,2,3…)</div>
           <div class="bigwrap screws"><canvas class="bigwave" id="bigwave"></canvas>
@@ -692,12 +696,13 @@ function renderTracklist(){const el=$('#tracklist');el.innerHTML='';$('#trkCount
       const f=tracks.find(x=>x.id===id),fi=list.indexOf(f),ti=list.indexOf(t);list.splice(fi,1);list.splice(ti,0,f);list.forEach((x,i)=>x.order=i);renderAll();saveMeta();});
     el.appendChild(d);});}
 
-function renderL1(){const t=activeTrack();if(!t)return;$('#trkTitle').textContent=t.name;$('#trkSub').textContent=t.versions.length+' version'+(t.versions.length>1?'s':'');// (version(s) identical EN)
+let blindMode=false;
+function renderL1(){const t=activeTrack();if(!t)return;$('#l1body').classList.toggle('blind',blindMode);$('#trkTitle').textContent=blindMode?'🎭 Blind test':t.name;$('#trkSub').textContent=t.versions.length+' version'+(t.versions.length>1?'s':'');
   drawBigWave();const wrap=$('#vrows');wrap.innerHTML='';
   t.versions.forEach((v,i)=>{const a=v.a,aud=(playMode==='track'&&playTrackId===t.id&&audibleId===v.id),el=t.electedId===v.id;
     const row=document.createElement('div');row.className='vrow'+(aud?' audible':'')+(el?' elected':'');
     row.innerHTML='<button class="pick" title="Listen to this version">'+String.fromCharCode(65+i)+'</button>'+
-      '<div class="vmid"><div class="vname">'+esc(v.name)+(el?' <span class="tag">★ CHOSEN</span>':'')+'</div><canvas class="minirow" width="900" height="56"></canvas></div>'+
+      '<div class="vmid"><div class="vname">'+(blindMode?('Version '+String.fromCharCode(65+i)):(esc(v.name)+(el?' <span class="tag">★ CHOSEN</span>':'')))+'</div><canvas class="minirow" width="900" height="56"></canvas></div>'+
       '<div class="rate" title="Your rating (red → green)">'+[1,2,3,4,5].map(r=>'<button class="rdot '+(v.rating===r?'on':'')+'" data-r="'+r+'" title="'+RATE[r-1]+'"></button>').join('')+'</div>'+
       '<div class="vmet"><span class="'+wc('lufs',a.lufs)+'">LUFS <b>'+a.lufs.toFixed(1)+'</b></span><span class="'+wc('tp',a.truePeakDb)+'">TP <b>'+a.truePeakDb.toFixed(1)+'</b></span>'+
         '<span>LRA <b>'+(a.lra||0).toFixed(1)+'</b></span><span>PLR <b>'+(a.plr||0).toFixed(1)+'</b></span>'+
@@ -1046,6 +1051,13 @@ $('#metWindow').onclick=openMeterWindow;
 function applyTheme(day){document.body.classList.toggle('day',day);$('#themeToggle').textContent=day?'☀':'🌙';try{localStorage.setItem('ma_theme',day?'day':'night');}catch(e){}}
 applyTheme((function(){try{return(localStorage.getItem('ma_theme')||'day')==='day';}catch(e){return true;}})());
 $('#themeToggle').onclick=()=>applyTheme(!document.body.classList.contains('day'));
+$('#blindBtn').onclick=()=>{blindMode=!blindMode;$('#blindBtn').classList.toggle('on',blindMode);renderL1();toast(blindMode?'🎭 Blind ON — juge à l\'oreille':'Blind OFF');};
+/* Hotkeys (desktop) : 1-5 = switch version · Espace = play/pause · C/Entrée = choisir la version écoutée */
+document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
+  if(e.code==='Space'){$('#tpPlay').click();e.preventDefault();return;}
+  if(level===1){const t=activeTrack();if(!t)return;const n='12345'.indexOf(e.key);
+    if(n>=0&&t.versions[n]){switchAudible(t,t.versions[n]);e.preventDefault();return;}
+    if(e.key==='Enter'||e.key.toLowerCase()==='c'){const r=verById(audibleId);const v=(r&&r.t===t)?r.v:verById(t.electedId).v;t.electedId=v.id;electedNames=new Set([...electedNames].filter(nm=>!t.versions.some(x=>x.name===nm)));electedNames.add(v.name);renderAll();saveMeta();toast('★ kept'+(blindMode?'':' · '+v.name));e.preventDefault();}}});
 $('#clearBtn').onclick=()=>{if(!versionsAll.length)return;if(!confirm('Clear everything and start over? (current files and your choices will be erased)'))return;
   stopAll();versionsAll=[];tracks=[];activeTrackId=null;electedNames=new Set();trimByName={};try{localStorage.removeItem(MK);}catch(e){}
   $('#hero').hidden=false;$('#l1body').hidden=true;$('#col1').hidden=true;$('#transport').classList.remove('show');renderAll();toast('Cleared — start fresh with new files');};
@@ -1076,7 +1088,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=1; // V2 — bump à chaque deploy
+const APP_BUILD=2; // V2 — bump à chaque deploy
 const BUILD_HEX='V2·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
