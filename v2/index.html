@@ -432,6 +432,7 @@
   /* Blind mode : cacher tout ce qui identifie une version */
   #l1body.blind .vmet,#l1body.blind .platforms,#l1body.blind #bwName,#l1body.blind .vname .tag{visibility:hidden}
   #blindBtn.on{background:var(--amber);color:#fff;border-color:var(--amber)}
+  .nowver{font-weight:900;font-size:20px;color:var(--amber);font-family:"Arial Black",sans-serif;letter-spacing:.03em;flex:none;margin-left:auto;text-shadow:0 0 10px var(--amberglow);min-width:46px;text-align:center;transition:.08s}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -494,6 +495,7 @@
         <div id="l1body" hidden>
           <div class="l1head"><button class="playbig" id="trkPlay">▶</button>
             <div><h3 id="trkTitle">—</h3><span class="sub" id="trkSub"></span></div>
+            <span class="nowver" id="nowVer" title="Version en cours d'écoute">▸ A</span>
             <button class="ghost2" id="blindBtn" title="Blind mode : juge à l'oreille, sans voir les noms ni les chiffres">🎭 Blind</button>
             <span class="curtime led" id="curTime">0:00</span></div>
           <div style="font-size:10.5px;color:var(--ink2);margin:-6px 0 12px"><b style="color:var(--amber)">A/B/C</b> = listen (same instant) · <b>dots</b> = your rating (red→green) · <b style="color:#34d160">✓ Choose</b> = the version kept for the album · on the left, <b>use ▲▼</b> to order the tracks (1,2,3…)</div>
@@ -732,6 +734,7 @@ function wc(m,val){if(m==='lufs')return(val>-6||val<-18)?'warn':'';if(m==='tp')r
 function drawWave(cv,peaks,hot){const ctx=cv.getContext('2d'),w=cv.width,h=cv.height,mid=h/2;ctx.clearRect(0,0,w,h);ctx.fillStyle=hot?'#ffb43a':'#4fb586';
   const n=peaks.length,bw=w/n;for(let i=0;i<n;i++){const ph=Math.max(1,peaks[i]*mid*.95);ctx.fillRect(i*bw,mid-ph,Math.max(.6,bw*.7),ph*2);}}
 function drawBigWave(){const t=activeTrack();if(!t)return;const v=verById(audibleId)&&verById(audibleId).t===t?verById(audibleId).v:verById(t.electedId).v;
+  const _nv=$('#nowVer'),_vi=t.versions.indexOf(v);if(_nv)_nv.textContent='▸ '+(_vi>=0?String.fromCharCode(65+_vi):'?');
   const cv=$('#bigwave'),dpr=devicePixelRatio||1,W=cv.clientWidth||800,H=110;if(cv.width!==Math.round(W*dpr)){cv.width=W*dpr;cv.height=H*dpr;}
   const ctx=cv.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);const p=v.a.peaks,mid=H/2,bw=W/p.length;
   const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,'#7df0a0');g.addColorStop(.5,'#62f08e');g.addColorStop(1,'#2f9a58');ctx.fillStyle=g;
@@ -1088,7 +1091,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=2; // V2 — bump à chaque deploy
+const APP_BUILD=3; // V2 — bump à chaque deploy
 const BUILD_HEX='V2·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
