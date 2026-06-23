@@ -50,15 +50,20 @@
   .albumName{font-weight:700;border:1px solid var(--line);border-radius:5px;padding:6px 10px;font-size:12px;color:var(--amber);background:#15120f;
     outline:none;max-width:200px;letter-spacing:.06em;box-shadow:inset 0 2px 4px rgba(0,0,0,.6)}
   .albumName:focus{box-shadow:inset 0 2px 4px rgba(0,0,0,.6),0 0 0 2px var(--amberdim)}
-  .ghost{margin-left:auto;padding:10px 18px;border-radius:7px;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;
-    color:#231708;background:linear-gradient(180deg,#ffc964,#d4922c);box-shadow:var(--bevel);border:1px solid #15110b}
+  .ghost{margin-left:auto;padding:9px 16px;border-radius:6px;font-weight:800;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--ink);background:transparent;border:1px solid var(--ink);box-shadow:none}
   .ghost:active{transform:translateY(1px)}
+  body.day .ghost{color:var(--ink);border-color:#c9c3b6}
 
   /* ===== MASTER METER PANEL ===== */
-  .meterbar{display:flex;align-items:center;gap:18px;padding:8px 20px;background:#0c0a08;background-image:radial-gradient(80% 200% at 50% 0,#1a1612,#0c0a08);
-    border-bottom:2px solid var(--line);box-shadow:inset 0 3px 10px rgba(0,0,0,.7);min-height:70px;overflow-x:auto;position:relative}
-  .meterbar.idle{filter:brightness(.6) saturate(.6)}
-  .mtitle{font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--brass);font-weight:800;flex:none;line-height:1.5;border-left:2px solid var(--amberdim);padding-left:8px}
+  .meterbar{display:flex;align-items:center;gap:22px;padding:13px 26px;min-height:98px;overflow-x:auto;position:relative;
+    background:linear-gradient(180deg,#2c2f34,#191b1f);
+    background-image:linear-gradient(180deg,#2c2f34,#191b1f),repeating-linear-gradient(90deg,rgba(255,255,255,.026) 0 1px,rgba(0,0,0,.06) 1px 3px);
+    border-bottom:1px solid #0a0b0d;box-shadow:inset 0 1px 0 rgba(255,255,255,.07),inset 0 -12px 26px rgba(0,0,0,.5),0 2px 9px rgba(0,0,0,.32)}
+  .meterbar::before,.meterbar::after{content:'';position:absolute;top:10px;width:9px;height:9px;border-radius:50%;background:radial-gradient(circle at 38% 32%,#62676e,#2a2d31 72%);box-shadow:inset 0 0 2px #000,0 1px 0 rgba(255,255,255,.06)}
+  .meterbar::before{left:10px}.meterbar::after{right:10px}
+  .meterbar.idle{filter:brightness(.78) saturate(.85)}
+  .mtitle{font-size:9px;letter-spacing:.22em;text-transform:uppercase;color:#7f858d;font-weight:800;flex:none;line-height:1.6;border-left:2px solid #495059;padding-left:9px;text-shadow:0 1px 0 rgba(255,255,255,.05),0 -1px 0 rgba(0,0,0,.6)}
   .mblk{display:flex;flex-direction:column;gap:1px;flex:none;width:84px;align-items:flex-start}
   .mblk .lab{font-size:8.5px;color:var(--ink2);letter-spacing:.12em;text-transform:uppercase;font-weight:700}
   .mblk .big{font-family:var(--led);font-size:21px;font-weight:700;letter-spacing:.02em;color:#ffb43a;text-shadow:0 0 8px rgba(255,180,58,.5);
@@ -296,20 +301,20 @@
 
   /* ===== THÈME JOUR (châssis clair, fenêtres de mètres sombres comme le vrai matos) ===== */
   /* ===== THÈME JOUR — LAB WHITE (blanc, air, accent BLEU COBALT ; vert/orange/rouge gardent leur sens) ===== */
-  body.day{--bg:#f4f6f8;--panel:#ffffff;--panel2:#eef1f5;--panelhi:#ffffff;--ink:#16181d;--ink2:#8b93a0;--line:#e4e8ed;--brass:#737b88;
-    --amber:#2563eb;--amberdim:#9bb4ef;--amberglow:rgba(37,99,235,.30);
-    --steel:linear-gradient(180deg,#ffffff,#f5f7f9);
+  body.day{--bg:#f4f2ec;--panel:#fbfaf7;--panel2:#efece4;--panelhi:#ffffff;--ink:#23211d;--ink2:#9a958b;--line:#e6e1d6;--brass:#8a8478;
+    --amber:#2563eb;--amberdim:#9bb4ef;--amberglow:rgba(37,99,235,.20);
+    --steel:linear-gradient(180deg,#fbfaf7,#efece4);
     --brushed:none;
-    --bevel:0 1px 2px rgba(20,28,45,.06),0 1px 3px rgba(20,28,45,.05);
+    --bevel:0 1px 2px rgba(42,38,30,.04);
     --screw:radial-gradient(circle at 38% 34%,#eef1f5,#cdd3da 62%,#b3bac2);
-    background:#f4f6f8;background-image:none}
+    background:#f4f2ec;background-image:none}
   body.day .screws::before,body.day .screws::after{display:none}
-  body.day header{background:#fff;border-bottom:1px solid var(--line)}
-  body.day .brand{color:#16181d;text-shadow:none}
-  body.day .col{background:#fff}
-  body.day .lv{border-radius:11px}
-  body.day .lv.active{background:var(--amber);box-shadow:0 3px 11px rgba(37,99,235,.30)}
-  body.day .lv.active .n,body.day .lv.active .t,body.day .lv.active .d{color:#fff;text-shadow:none}
+  body.day header{background:#fbfaf7;border-bottom:1px solid var(--line)}
+  body.day .brand{color:#23211d;text-shadow:none}
+  body.day .col{background:#fbfaf7}
+  body.day .lv{border-radius:0;background:transparent;box-shadow:none}
+  body.day .lv.active{background:transparent;box-shadow:inset 0 -2.5px 0 var(--amber)}
+  body.day .lv.active .n,body.day .lv.active .t,body.day .lv.active .d{color:var(--amber);text-shadow:none}
   body.day .tk.active{background:#fff;box-shadow:var(--bevel),0 0 0 2px var(--amber)}
   body.day .tk.active .no{color:#fff;text-shadow:none}
   body.day .vrow.audible{background:#f2f7ff;box-shadow:var(--bevel),0 0 0 2px var(--amber)}
@@ -393,13 +398,13 @@
   /* ===== Conformité plateformes ===== */
   .platforms{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin:11px 0 14px}
   .platforms .pllab{font-size:9px;font-weight:800;letter-spacing:.14em;color:var(--ink2);margin-right:4px}
-  .plchip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 8px;border-radius:8px;font-size:11px;font-weight:800;letter-spacing:.02em;background:var(--panel2);box-shadow:var(--bevel);border:1px solid var(--line)}
+  .plchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:5px;font-size:10.5px;font-weight:700;letter-spacing:.03em;font-family:var(--led);background:transparent;box-shadow:none;border:1px solid var(--line)}
   .plchip::before{content:'';width:9px;height:9px;border-radius:50%;flex:none;box-shadow:0 0 5px currentColor}
   .plchip i{font-style:normal;font-weight:600;font-size:9.5px;font-family:var(--led);opacity:.85}
   .plchip.green::before{background:#34d160;color:#34d160}.plchip.green{color:#1c8f4f}
   .plchip.orange::before{background:#ff9f43;color:#ff9f43}.plchip.orange{color:#c47d12}
   .plchip.red::before{background:#ff4b3e;color:#ff4b3e}.plchip.red{color:#d83a2e}
-  body.day .plchip{background:#fff}
+  body.day .plchip{background:transparent}
   /* Tableau plateformes (analyseur) */
   .bmplat{padding:2px 4px 10px;overflow:auto;max-height:34vh}
   .pltab{width:100%;border-collapse:collapse;font-size:12px;font-family:var(--led)}
@@ -496,7 +501,7 @@
           <div class="l1head"><button class="playbig" id="trkPlay">▶</button>
             <div><h3 id="trkTitle">—</h3><span class="sub" id="trkSub"></span></div>
             <span class="nowver" id="nowVer" title="Version en cours d'écoute">▸ A</span>
-            <button class="ghost2" id="blindBtn" title="Blind mode : juge à l'oreille, sans voir les noms ni les chiffres">🎭 Blind</button>
+            <button class="ghost2" id="blindBtn" title="Blind mode : juge à l'oreille, sans voir les noms ni les chiffres">BLIND</button>
             <span class="curtime led" id="curTime">0:00</span></div>
           <div style="font-size:10.5px;color:var(--ink2);margin:-6px 0 12px"><b style="color:var(--amber)">A/B/C</b> = listen (same instant) · <b>dots</b> = your rating (red→green) · <b style="color:#34d160">✓ Choose</b> = the version kept for the album · on the left, <b>use ▲▼</b> to order the tracks (1,2,3…)</div>
           <div class="bigwrap screws"><canvas class="bigwave" id="bigwave"></canvas>
@@ -699,7 +704,7 @@ function renderTracklist(){const el=$('#tracklist');el.innerHTML='';$('#trkCount
     el.appendChild(d);});}
 
 let blindMode=false;
-function renderL1(){const t=activeTrack();if(!t)return;$('#l1body').classList.toggle('blind',blindMode);$('#trkTitle').textContent=blindMode?'🎭 Blind test':t.name;$('#trkSub').textContent=t.versions.length+' version'+(t.versions.length>1?'s':'');
+function renderL1(){const t=activeTrack();if(!t)return;$('#l1body').classList.toggle('blind',blindMode);$('#trkTitle').textContent=blindMode?'BLIND TEST':t.name;$('#trkSub').textContent=t.versions.length+' version'+(t.versions.length>1?'s':'');
   drawBigWave();const wrap=$('#vrows');wrap.innerHTML='';
   t.versions.forEach((v,i)=>{const a=v.a,aud=(playMode==='track'&&playTrackId===t.id&&audibleId===v.id),el=t.electedId===v.id;
     const row=document.createElement('div');row.className='vrow'+(aud?' audible':'')+(el?' elected':'');
@@ -1054,7 +1059,7 @@ $('#metWindow').onclick=openMeterWindow;
 function applyTheme(day){document.body.classList.toggle('day',day);$('#themeToggle').textContent=day?'☀':'🌙';try{localStorage.setItem('ma_theme',day?'day':'night');}catch(e){}}
 applyTheme((function(){try{return(localStorage.getItem('ma_theme')||'day')==='day';}catch(e){return true;}})());
 $('#themeToggle').onclick=()=>applyTheme(!document.body.classList.contains('day'));
-$('#blindBtn').onclick=()=>{blindMode=!blindMode;$('#blindBtn').classList.toggle('on',blindMode);renderL1();toast(blindMode?'🎭 Blind ON — juge à l\'oreille':'Blind OFF');};
+$('#blindBtn').onclick=()=>{blindMode=!blindMode;$('#blindBtn').classList.toggle('on',blindMode);renderL1();toast(blindMode?'BLIND ON — judge by ear':'Blind OFF');};
 /* Hotkeys (desktop) : 1-5 = switch version · Espace = play/pause · C/Entrée = choisir la version écoutée */
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
   if(e.code==='Space'){$('#tpPlay').click();e.preventDefault();return;}
@@ -1091,7 +1096,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=3; // V2 — bump à chaque deploy
+const APP_BUILD=4; // V2 — bump à chaque deploy
 const BUILD_HEX='V2·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
