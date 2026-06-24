@@ -450,13 +450,30 @@
   .llab{font-size:6.5px;letter-spacing:.1em;text-transform:lowercase;color:#7c828a;font-weight:600}
   /* ===== Knob monitor réaliste (Weiss / Shadow Hills) ===== */
   .mknob{display:flex;flex-direction:column;align-items:center;gap:4px;flex:none;margin-left:2px}
-  .mkdial{width:50px;height:50px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;
-    background:radial-gradient(circle at 50% 28%,#525762,#262a30 60%,#141619 100%);
-    box-shadow:0 5px 11px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.18),inset 0 -7px 13px rgba(0,0,0,.62),0 0 0 1px #0a0b0d}
-  .mkdial::before{content:'';position:absolute;inset:8px;border-radius:50%;background:radial-gradient(circle at 50% 34%,#363b42,#1a1d21);box-shadow:inset 0 1px 2px rgba(255,255,255,.13),inset 0 -3px 6px rgba(0,0,0,.55)}
-  .mkptr{position:absolute;left:50%;top:50%;width:3px;height:19px;background:linear-gradient(#ffffff,#c5c9cf);border-radius:2px;transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot,-60deg));box-shadow:0 0 4px rgba(255,255,255,.5);z-index:2}
-  .mkdial:active{box-shadow:0 3px 7px rgba(0,0,0,.6),inset 0 2px 3px rgba(255,255,255,.18),inset 0 -7px 13px rgba(0,0,0,.62),0 0 0 1px #0a0b0d,0 0 0 3px rgba(255,180,58,.25)}
+  /* === KNOB PHOTORÉALISTE (Shadow Hills / Weiss) : jupe métal moletée + dôme glossy + pointeur === */
+  .mkdial{width:58px;height:58px;border-radius:50%;position:relative;cursor:ns-resize;touch-action:none;
+    background:repeating-conic-gradient(#22252a 0deg 3deg,#5a5e66 3deg 6deg);
+    box-shadow:0 7px 16px rgba(0,0,0,.62),0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px #121417}
+  .mkdial::before{content:'';position:absolute;inset:6px;border-radius:50%;
+    background:radial-gradient(120% 110% at 38% 24%,rgba(255,255,255,.6),rgba(255,255,255,.06) 20%,transparent 42%),radial-gradient(circle at 50% 66%,#2c3036,#101215 56%,#050608);
+    box-shadow:inset 0 3px 7px rgba(255,255,255,.16),inset 0 -9px 16px rgba(0,0,0,.74),0 1px 2px rgba(0,0,0,.5)}
+  .mkdial::after{content:'';position:absolute;inset:-5px;border-radius:50%;pointer-events:none;
+    background:repeating-conic-gradient(rgba(255,255,255,.3) 0 1.3deg,transparent 1.3deg 30deg);
+    -webkit-mask:radial-gradient(circle,transparent calc(50% - 3px),#000 calc(50% - 3px));mask:radial-gradient(circle,transparent calc(50% - 3px),#000 calc(50% - 3px))}
+  .mkptr{position:absolute;left:50%;top:50%;width:3px;height:22px;border-radius:2px;background:linear-gradient(#ffffff,#c5c9cf);transform-origin:50% 100%;transform:translate(-50%,-100%) rotate(var(--rot,-60deg));box-shadow:0 0 5px rgba(255,255,255,.65);z-index:3}
+  .mkdial:active{box-shadow:0 4px 9px rgba(0,0,0,.65),0 1px 0 rgba(255,255,255,.12),inset 0 0 0 1px #121417,0 0 0 3px rgba(255,180,58,.25)}
   .mklab{font-size:7px;letter-spacing:.16em;text-transform:lowercase;color:#8a8f97;font-weight:600}
+  /* === Boutons carrés rétroéclairés (Weiss) === */
+  .wbtns{display:flex;gap:7px;flex:none;align-items:flex-end}
+  .wbcell{display:flex;flex-direction:column;align-items:center;gap:3px}
+  .wbtn{width:25px;height:25px;border-radius:4px;position:relative;cursor:pointer;flex:none;
+    background:linear-gradient(180deg,#3b3e44,#1d1f23);box-shadow:0 2px 3px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.13),inset 0 -2px 3px rgba(0,0,0,.55);border:1px solid #0d0e10}
+  .wbtn::before{content:'';position:absolute;inset:5px;border-radius:2px;background:#191b1e;box-shadow:inset 0 1px 2px rgba(0,0,0,.75)}
+  .wbtn:active{transform:translateY(1px)}
+  .wbtn.on.green::before{background:radial-gradient(circle at 40% 34%,#b6f7cd,#2ecb5d 78%);box-shadow:0 0 7px 1px rgba(52,209,96,.75),inset 0 1px 1px rgba(255,255,255,.55)}
+  .wbtn.on.amber::before{background:radial-gradient(circle at 40% 34%,#ffe2a8,#f5a623 78%);box-shadow:0 0 7px 1px rgba(255,180,58,.75),inset 0 1px 1px rgba(255,255,255,.55)}
+  .wbtn.on.red::before{background:radial-gradient(circle at 40% 34%,#ffb3ad,#ec3b2e 78%);box-shadow:0 0 8px 1px rgba(255,75,62,.8),inset 0 1px 1px rgba(255,255,255,.55)}
+  .wblab{font-size:6.5px;letter-spacing:.08em;text-transform:lowercase;color:#7c828a;font-weight:600}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -499,6 +516,11 @@
       <div class="lampcell"><span class="lamp red" id="lampClip"></span><span class="llab">clip</span></div>
       <div class="lampcell"><span class="lamp amber on" id="lampLock"></span><span class="llab">lock</span></div>
       <div class="lampcell"><span class="lamp green on"></span><span class="llab">48k</span></div>
+    </div>
+    <div class="wbtns">
+      <div class="wbcell"><button class="wbtn green" data-wb="mono"></button><span class="wblab">mono</span></div>
+      <div class="wbcell"><button class="wbtn amber" data-wb="dim"></button><span class="wblab">dim</span></div>
+      <div class="wbcell"><button class="wbtn green" data-wb="ref"></button><span class="wblab">ref</span></div>
     </div>
     <div class="mknob" id="monKnob" title="Monitor level (drag up/down)"><div class="mkdial"><span class="mkptr"></span></div><span class="mklab">monitor</span></div>
     <div class="mexp"><button id="metExpand" title="Expand">⤢</button><button id="metWindow" title="Window">⧉</button></div>
@@ -1121,6 +1143,8 @@ $('#themeToggle').onclick=()=>applyTheme(!document.body.classList.contains('day'
   dial.addEventListener('pointerup',()=>d=null);
   dial.addEventListener('dblclick',()=>set(0.85));
   dial.addEventListener('wheel',e=>{e.preventDefault();set(lvl+(e.deltaY<0?0.04:-0.04));},{passive:false});})();
+document.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const on=b.classList.toggle('on');
+  if(b.dataset.wb==='dim'&&typeof monitorGain!=='undefined'&&monitorGain){monitorGain.gain.setTargetAtTime(on?0.15:0.85,audioCtx.currentTime,0.02);}});
 $('#blindBtn').onclick=()=>{blindMode=!blindMode;$('#blindBtn').classList.toggle('on',blindMode);renderL1();toast(blindMode?'BLIND ON — judge by ear':'Blind OFF');};
 /* Hotkeys (desktop) : 1-5 = switch version · Espace = play/pause · C/Entrée = choisir la version écoutée */
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
@@ -1158,7 +1182,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=8; // V2 — bump à chaque deploy
+const APP_BUILD=9; // V2 — bump à chaque deploy
 const BUILD_HEX='V2·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
