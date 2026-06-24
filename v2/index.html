@@ -780,7 +780,13 @@ function drawBigWave(){const t=activeTrack();if(!t)return;const v=verById(audibl
   $('#curTime').textContent=fmtT(filePos);renderPlatforms(v);}
 /* Conformité plateformes : cible LUFS + plafond True Peak -1 dBTP. vert=dans la cible · orange=hors cible (sera normalisé) · rouge=sature (TP > plafond). */
 const PLATFORMS=[{n:'Spotify',t:-14},{n:'Apple',t:-16},{n:'YouTube',t:-14},{n:'Tidal',t:-14},{n:'Club/CD',t:-9}];
-function platformState(a,t){if(a.truePeakDb>-1.0)return['red','clips'];const d=a.lufs-t;if(Math.abs(d)<=1.0)return['green','on target'];if(d>0)return['orange','+'+d.toFixed(1)+' loud'];return['orange',d.toFixed(1)+' low'];}
+function platformState(a,t){
+  if(a.truePeakDb>-0.1)return['red','over'];                                   /* vrai clipping inter-sample */
+  if(a.truePeakDb>-1.0&&t<=-12)return['orange','peak '+a.truePeakDb.toFixed(1)]; /* au-dessus du plafond −1 dBTP streaming → sera limité */
+  const d=a.lufs-t;
+  if(Math.abs(d)<=1.0)return['green','on target'];
+  if(d>0)return['orange','+'+d.toFixed(1)+' loud'];
+  return['orange',d.toFixed(1)+' low'];}
 function renderPlatforms(v){const el=$('#platforms');if(!el)return;if(!v||!v.a){el.innerHTML='';return;}
   el.innerHTML='<span class="pllab">COMPLIANCE</span>'+PLATFORMS.map(p=>{const s=platformState(v.a,p.t);
     return '<span class="plchip '+s[0]+'" title="'+p.n+' · target '+p.t+' LUFS · your TP '+v.a.truePeakDb.toFixed(1)+' dBTP">'+p.n+' <i>'+s[1]+'</i></span>';}).join('');}
@@ -858,7 +864,7 @@ $('#tlCanvas').onclick=e=>{if(playMode!=='album')return;const target=((e.clientX
 let dL=0,dR=0,dLufs=-60,dPeak=-60,dDyn=0,dCorr=0,dBal=0,lufsSum=0,lufsN=0,fc=0;
 function resetMeters(){dL=dR=0;dLufs=-60;dPeak=-60;dDyn=0;dCorr=0;dBal=0;lufsSum=0;lufsN=0;
   $('#mLufs').textContent='—';$('#mPeak').textContent='—';$('#mDyn').textContent='—';if($('#bmLufsI'))$('#bmLufsI').textContent='—';
-  const vu=$('#vu');drawVU(vu.getContext('2d'),vu.width,vu.height,0,0);}
+  const vu=$('#vu');drawVU(vu.getContext('2d'),vu.width,vu.height,0,0);if(typeof drawIdleDisplays==='function')drawIdleDisplays();}
 /* VU à aiguille gradué en dBFS — échelle réelle -48..0, zone rouge dès -6 dB.
    v = position 0..1 issue de (rmsDb+54)/54 dans la loop → cohérent avec les labels. */
 const VUMARKS=[[-48,'48'],[-30,'30'],[-20,'20'],[-12,'12'],[-6,'6'],[0,'0']];
@@ -876,6 +882,14 @@ function drawVU(ctx,W,H,l,r){ctx.clearRect(0,0,W,H);const gw=W/2;ctx.textAlign='
     ctx.strokeStyle='#1b1206';ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+Math.cos(ang)*R*0.78,cy+Math.sin(ang)*R*0.78);ctx.stroke();
     ctx.fillStyle='#241808';ctx.beginPath();ctx.arc(cx,cy,2.3,0,7);ctx.fill();ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=.6;ctx.beginPath();ctx.arc(cx,cy,2.3,0,7);ctx.stroke();});}
 try{const _vu=document.getElementById('vu');if(_vu)drawVU(_vu.getContext('2d'),_vu.width,_vu.height,0,0);}catch(e){}
+function drawIdleDisplays(){
+  try{const sc=document.getElementById('specMini');if(sc){const c=sc.getContext('2d'),W=sc.width,H=sc.height;c.clearRect(0,0,W,H);c.fillStyle='#06120a';c.fillRect(0,0,W,H);
+    c.strokeStyle='rgba(98,240,142,.09)';c.lineWidth=1;for(let i=1;i<7;i++){c.beginPath();c.moveTo(i*W/7,0);c.lineTo(i*W/7,H);c.stroke();}
+    c.strokeStyle='rgba(98,240,142,.16)';c.beginPath();c.moveTo(0,H-2);c.lineTo(W,H-2);c.stroke();}}catch(e){}
+  try{const gc=document.getElementById('gonioMini');if(gc){const c=gc.getContext('2d'),W=gc.width,H=gc.height;c.clearRect(0,0,W,H);c.fillStyle='#06120a';c.fillRect(0,0,W,H);
+    c.strokeStyle='rgba(98,240,142,.16)';c.lineWidth=1;c.beginPath();c.moveTo(0,H/2);c.lineTo(W,H/2);c.moveTo(W/2,0);c.lineTo(W/2,H);c.stroke();c.beginPath();c.arc(W/2,H/2,W*0.36,0,7);c.stroke();}}catch(e){}
+  try{const cr=document.getElementById('corrI');if(cr&&!cr.parentNode.querySelector('canvas')){}}catch(e){}}
+drawIdleDisplays();
 function loop(){const sc=$('#specMini').getContext('2d'),gc=$('#gonioMini').getContext('2d'),vuCtx=$('#vu').getContext('2d'),vW=$('#vu').width,vH=$('#vu').height;
   const SW=320,SH=100,GW=100,fs=audioCtx.sampleRate;
   const tdL=new Float32Array(anML.fftSize),tdR=new Float32Array(anMR.fftSize),fq=new Uint8Array(anFFT.frequencyBinCount);
@@ -1144,7 +1158,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=7; // V2 — bump à chaque deploy
+const APP_BUILD=8; // V2 — bump à chaque deploy
 const BUILD_HEX='V2·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
