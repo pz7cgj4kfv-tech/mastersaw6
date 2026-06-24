@@ -574,13 +574,13 @@
     <div class="lamps">
       <div class="lampcell"><span class="lamp green" id="lampPlay"></span><span class="llab">play</span></div>
       <div class="lampcell"><span class="lamp red" id="lampClip"></span><span class="llab">clip</span></div>
-      <div class="lampcell"><span class="lamp amber on" id="lampLock"></span><span class="llab">lock</span></div>
-      <div class="lampcell"><span class="lamp green on"></span><span class="llab">48k</span></div>
+      <div class="lampcell"><span class="lamp amber" id="lampLock" title="Versions alignées (même instant musical)"></span><span class="llab">align</span></div>
+      <div class="lampcell"><span class="lamp green" id="lampSR" title="Fréquence d'échantillonnage des fichiers chargés"></span><span class="llab" id="srLab">— k</span></div>
     </div>
     <div class="wbtns">
       <div class="wbcell"><button class="wbtn green" data-wb="mono"></button><span class="wblab">mono</span></div>
       <div class="wbcell"><button class="wbtn amber" data-wb="dim"></button><span class="wblab">dim</span></div>
-      <div class="wbcell"><button class="wbtn green" data-wb="ref"></button><span class="wblab">ref</span></div>
+      <div class="wbcell"><button class="wbtn green" data-wb="ref" disabled title="Reference compare — arrive en v4"></button><span class="wblab">ref</span></div>
     </div>
     <div class="mknob" id="monKnob" title="Monitor level (drag up/down)"><div class="mkdial"><span class="mkptr"></span></div><span class="mklab">monitor</span></div>
     <div class="mexp"><button id="metExpand" title="Expand">⤢</button><button id="metWindow" title="Window">⧉</button></div>
@@ -838,7 +838,13 @@ async function addFiles(list){const files=[...list].filter(f=>/audio|wav|aif|fla
 const RATE=['Dislike','Meh','OK','Good','Outstanding'];
 function renderAll(){tracks.forEach(t=>{if(t.versions.length&&!t.versions.find(v=>v.id===t.electedId))t.electedId=t.versions[0].id;});renderTracklist();renderL1();if(level===2)renderAlbum();renderL2();renderL3();updateRail();}
 function updateRail(){const el=tracks.filter(t=>t.electedId).length;
-  $('.lv[data-lv="2"] .d').textContent=el?(el+' titles · level · sequence'):(tracks.length+' tracks');}
+  $('.lv[data-lv="2"] .d').textContent=el?(el+' titles · level · sequence'):(tracks.length+' tracks');updateFaceplate();}
+/* lampes RÉELLES du faceplate (plus de déco) : fréquence d'échantillonnage du moteur + alignement des versions */
+function updateFaceplate(){const sr=(typeof audioCtx!=='undefined'&&audioCtx)?audioCtx.sampleRate:0;
+  const srl=document.getElementById('srLab');if(srl)srl.textContent=sr?(Math.round(sr/1000)+'k'):'— k';
+  const lSR=document.getElementById('lampSR');if(lSR)lSR.classList.toggle('on',tracks.length>0);
+  const aligned=tracks.some(t=>t.versions.length>1);
+  const lL=document.getElementById('lampLock');if(lL)lL.classList.toggle('on',aligned);}
 function activeTrack(){return tracks.find(t=>t.id===activeTrackId);}
 function verById(id){for(const t of tracks){const v=t.versions.find(x=>x.id===id);if(v)return{v,t};}return null;}
 
@@ -914,13 +920,17 @@ function renderPlatforms(v){const el=$('#platforms');if(!el)return;if(!v||!v.a){
 /* ===================== PLAYBACK ENGINE ===================== */
 let masterGain,anFFT,splitMaster,anML,anMR;
 let playMode=null,playTrackId=null,audibleId=null,voices=[],playing=false,startedAt=0,offset=0,rafId=0,albumIdx=0,seeking=false,oneT=null,cmpPos=0,cmpFrac=null,transPlay=null;const transWindows={};
-let monitorGain;
+let monitorGain,monoNode,monoOn=false;
 function buildGraph(){masterGain=audioCtx.createGain();anFFT=audioCtx.createAnalyser();anFFT.fftSize=2048;anFFT.smoothingTimeConstant=.85;
   splitMaster=audioCtx.createChannelSplitter(2);anML=audioCtx.createAnalyser();anMR=audioCtx.createAnalyser();anML.fftSize=2048;anMR.fftSize=2048;
   monitorGain=audioCtx.createGain();monitorGain.gain.value=0.85;
+  /* nœud de SOMME MONO réelle : un gain forcé à 1 canal downmixe L+R (spec Web Audio), puis ré-étalé sur les 2 HP */
+  monoNode=audioCtx.createGain();monoNode.channelCount=1;monoNode.channelCountMode='explicit';monoNode.channelInterpretation='speakers';monoNode.connect(audioCtx.destination);
   masterGain.connect(anFFT);masterGain.connect(splitMaster);splitMaster.connect(anML,0);splitMaster.connect(anMR,1); /* mètres = AVANT le monitor */
-  masterGain.connect(monitorGain);monitorGain.connect(audioCtx.destination); /* sortie haut-parleurs = APRÈS le monitor */}
+  masterGain.connect(monitorGain);monitorGain.connect(audioCtx.destination); /* sortie haut-parleurs = APRÈS le monitor (stéréo par défaut) */}
+function setMono(on){monoOn=on;if(!monitorGain)return;try{monitorGain.disconnect();}catch(e){}monitorGain.connect(on?monoNode:audioCtx.destination);}
 buildGraph();
+try{updateFaceplate();}catch(e){}
 function gainFor(v){if(!$('#gainMatch').checked)return 1;return Math.min(4,Math.pow(10,(-14-v.a.lufs)/20));}
 function trimMul(t){return Math.pow(10,((t&&t.trimDb)||0)/20);}
 function stopAll(){stopTransition();voices.forEach(o=>{try{o.src.onended=null;o.src.stop();}catch(e){}o.src.disconnect();o.g.disconnect();});voices=[];playing=false;cancelAnimationFrame(rafId);$('#meterbar').classList.add('idle');resetMeters();
@@ -1403,8 +1413,9 @@ $('#themeToggle').onclick=()=>applyTheme(!document.body.classList.contains('day'
   dial.addEventListener('pointerup',()=>d=null);
   dial.addEventListener('dblclick',()=>set(0.85));
   dial.addEventListener('wheel',e=>{e.preventDefault();set(lvl+(e.deltaY<0?0.04:-0.04));},{passive:false});})();
-document.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{const on=b.classList.toggle('on');
-  if(b.dataset.wb==='dim'&&typeof monitorGain!=='undefined'&&monitorGain){monitorGain.gain.setTargetAtTime(on?0.15:0.85,audioCtx.currentTime,0.02);}});
+document.querySelectorAll('.wbtn').forEach(b=>b.onclick=()=>{if(b.disabled)return;const on=b.classList.toggle('on');
+  if(b.dataset.wb==='dim'&&typeof monitorGain!=='undefined'&&monitorGain){monitorGain.gain.setTargetAtTime(on?0.15:0.85,audioCtx.currentTime,0.02);}
+  else if(b.dataset.wb==='mono'){setMono(on);toast(on?'MONO — vérifie la compatibilité mono':'Stéréo');}});
 $('#blindBtn').onclick=()=>{blindMode=!blindMode;$('#blindBtn').classList.toggle('on',blindMode);renderL1();toast(blindMode?'BLIND ON — judge by ear':'Blind OFF');};
 /* Hotkeys (desktop) : 1-5 = switch version · Espace = play/pause · C/Entrée = choisir la version écoutée */
 document.addEventListener('keydown',e=>{if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA'||e.target.isContentEditable)return;
@@ -1442,7 +1453,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=2; // V3 — bump à chaque deploy
+const APP_BUILD=3; // V3 — bump à chaque deploy
 const BUILD_HEX='V3·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
