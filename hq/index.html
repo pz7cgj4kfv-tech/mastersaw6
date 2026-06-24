@@ -1,0 +1,171 @@
+<!doctype html><html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Master Saw6 — QG · Transient Lab'z</title>
+<style>
+  :root{--bg:#1a1410;--panel:#221a14;--panel2:#2b211a;--line:#3a3128;--ink:#ece4d3;--ink2:#a8967f;--brass:#A8895E;--amber:#ffb43a;--amberglow:rgba(255,180,58,.4);--green:#9bd65b;--blue:#7aa8ff}
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Helvetica Neue',Helvetica,system-ui,sans-serif;line-height:1.5;
+    padding:max(env(safe-area-inset-top,0px),0px) 0 60px}
+  a{color:var(--amber);text-decoration:none}
+  header{display:flex;align-items:center;gap:14px;padding:22px 26px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .wm{height:30px}
+  .sub{font-size:10px;letter-spacing:.26em;color:var(--brass);text-transform:uppercase}
+  .qgtag{margin-left:auto;font-size:10px;letter-spacing:.22em;color:var(--ink2);border:1px solid var(--line);border-radius:20px;padding:5px 12px;text-transform:uppercase}
+  nav{display:flex;gap:4px;overflow-x:auto;padding:12px 20px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:10}
+  nav button{flex:none;background:transparent;border:1px solid transparent;color:var(--ink2);font-size:12px;font-weight:700;letter-spacing:.03em;
+    padding:9px 14px;border-radius:8px;cursor:pointer;white-space:nowrap;text-transform:uppercase}
+  nav button.on{color:var(--ink);background:var(--panel);border-color:var(--line);box-shadow:inset 0 -2.5px 0 var(--amber)}
+  main{max-width:920px;margin:0 auto;padding:26px 20px}
+  .pane{display:none;animation:f .2s}.pane.on{display:block}@keyframes f{from{opacity:0}to{opacity:1}}
+  h1{font-size:21px;margin:0 0 4px}h2{font-size:15px;letter-spacing:.02em;margin:26px 0 12px;color:var(--amber);text-transform:uppercase;font-size:12px;letter-spacing:.16em}
+  p{margin:0 0 12px;color:var(--ink)}.muted{color:var(--ink2);font-size:13px}
+  .lead{font-size:15px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .card h3{margin:0 0 4px;font-size:14px}
+  .card .d{font-size:12.5px;color:var(--ink2);margin-bottom:10px}
+  .pill{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;border-radius:20px;padding:3px 9px;text-transform:uppercase}
+  .pill.live{background:rgba(155,214,91,.14);color:var(--green);border:1px solid rgba(155,214,91,.35)}
+  .pill.cur{background:rgba(255,180,58,.14);color:var(--amber);border:1px solid rgba(255,180,58,.35)}
+  .pill.old{background:var(--panel2);color:var(--ink2);border:1px solid var(--line)}
+  .pill.todo{background:rgba(122,168,255,.12);color:var(--blue);border:1px solid rgba(122,168,255,.3)}
+  .open{display:inline-block;margin-top:8px;font-weight:700;font-size:12px}
+  ul{margin:0 0 14px;padding-left:18px}li{margin:5px 0}
+  .idea{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:10px;padding:13px 15px;margin-bottom:12px}
+  .idea .who{font-size:10px;letter-spacing:.1em;color:var(--brass);text-transform:uppercase;margin-bottom:5px}
+  .idea h3{margin:0 0 6px;font-size:14px}
+  .idea .flags{font-size:12px;color:var(--ink2);margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+  .dec{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 15px;margin-bottom:10px}
+  .dec b{color:var(--ink)}.dec .why{font-size:12.5px;color:var(--ink2);margin-top:3px}
+  .ph{border:1px dashed var(--line);border-radius:12px;padding:30px;text-align:center;color:var(--ink2)}
+  .step{display:flex;gap:12px;margin-bottom:14px}.step .n{flex:none;width:26px;height:26px;border-radius:50%;background:var(--amber);color:#1a1410;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+  .foot{max-width:920px;margin:24px auto 0;padding:14px 20px;border-top:1px solid var(--line);font-size:11px;color:var(--ink2)}
+  @media(max-width:600px){header{padding:18px 16px 12px}.qgtag{display:none}main{padding:20px 14px}}
+</style></head>
+<body>
+<!-- gate -->
+<div id="pwgate" style="position:fixed;inset:0;z-index:99999;background:#1a1410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;color:#e7dcc6">
+  <svg width="220" height="70" viewBox="0 0 500 158" aria-label="Saw6"><g fill="none" stroke="#e7dcc6" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(0,9)" d="M92 30 C72 4 12 6 12 44 C12 73 88 67 88 100 C88 136 28 138 8 110"/><path transform="translate(132,9)" d="M0 140 L50 0 L100 140 M21 96 L79 96"/><path transform="translate(264,9)" d="M2 6 L26 140 L50 56 L74 140 L98 6"/></g><path transform="translate(396,9)" fill="none" stroke="#ffb43a" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round" d="M74 14 C42 2 16 30 16 80 C16 122 86 122 86 86 C86 56 28 50 16 78"/></svg>
+  <div style="font-size:11px;letter-spacing:.28em;color:#A8895E;text-transform:uppercase">QG · Transient Lab'z</div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <input id="pwin" type="password" placeholder="access code" autocomplete="off" autocapitalize="off" spellcheck="false" style="background:#120f0c;border:1px solid #3a3128;border-radius:8px;padding:12px 14px;color:#e7dcc6;font-size:15px;width:200px;outline:none">
+    <button id="pwgo" style="background:#ffb43a;border:none;border-radius:8px;padding:12px 18px;font-weight:800;color:#1a1410;font-size:14px;cursor:pointer">Enter</button>
+  </div>
+  <div id="pwerr" style="display:none;color:#ff7a6b;font-size:12px">Wrong code</div>
+</div>
+
+<header>
+  <svg class="wm" viewBox="0 0 500 158" aria-label="Saw6"><g fill="none" stroke="#e7dcc6" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(0,9)" d="M92 30 C72 4 12 6 12 44 C12 73 88 67 88 100 C88 136 28 138 8 110"/><path transform="translate(132,9)" d="M0 140 L50 0 L100 140 M21 96 L79 96"/><path transform="translate(264,9)" d="M2 6 L26 140 L50 56 L74 140 L98 6"/></g><path transform="translate(396,9)" fill="none" stroke="#ffb43a" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round" d="M74 14 C42 2 16 30 16 80 C16 122 86 122 86 86 C86 56 28 50 16 78"/></svg>
+  <div><div style="font-weight:800;letter-spacing:.04em">MASTER SAW6 · QG</div><div class="sub">Transient Lab'z · Swiss made</div></div>
+  <span class="qgtag">Quartier général</span>
+</header>
+
+<nav id="nav"></nav>
+<main id="main"></main>
+<div class="foot">QG interne Master Saw6 · on remplit au fur et à mesure · rien ne se perd. Dernière mise à jour : 24 juin 2026.</div>
+
+<script>
+var BASE='https://pz7cgj4kfv-tech.github.io/mastersaw6';
+var TABS=[
+ {id:'over', t:'Vue d\'ensemble', render:overview},
+ {id:'ver',  t:'Versions',       render:versions},
+ {id:'dev',  t:'À développer',   render:roadmap},
+ {id:'ideas',t:'Idées en vrac',  render:ideas},
+ {id:'dec',  t:'Décisions',      render:decisions},
+ {id:'sim',  t:'Simulation',     render:simu},
+ {id:'tuto', t:'Tutoriel',       render:tuto}
+];
+function overview(){return ''+
+ '<h1>Master Saw6 — le cockpit de DÉCISION d\'album</h1>'+
+ '<p class="lead">Pas un processeur, pas un mini-Ozone. Un instrument pour <b>décider</b> : quelle version garder, à quel niveau chaque morceau sonne <i>dans la séquence</i>, dans quel ordre, avec quels raccords — et comment ça se compare à tes références. Le traitement (EQ, comp, limiteur) reste dans ton DAW.</p>'+
+ '<p class="muted">100 % local, zéro serveur. Web + iOS (Capacitor). App en anglais. Studio Transient Lab\'z, Swiss made.</p>'+
+ '<h2>Le métier, en 4 gestes</h2>'+
+ '<div class="grid">'+
+  card('① Choisir','A/B des versions au même instant, zéro latence. Garde la bonne.')+
+  card('② Équilibrer','Le niveau d\'un morceau n\'existe que DANS la séquence. On règle là.')+
+  card('③ Séquencer','Ordre de l\'album + Album Flow (énergie/loudness) + raccords.')+
+  card('④ Référencer','Comparer ton master à une référence, loudness-matché, honnêtement.')+
+ '</div>'+
+ '<h2>Équipe</h2><ul>'+
+  '<li><b>David Saugy</b> — vision produit, ingé son / producteur</li>'+
+  '<li><b>Axel</b> — collaborateur, test</li>'+
+  '<li><b>Claude</b> — développeur principal (IA)</li></ul>'+
+ '<h2>Statut</h2><p><span class="pill live">V4 en ligne</span> &nbsp; beta privée (code d\'accès <b>saw6</b>). On remplit ce QG au fur et à mesure.</p>';
+}
+function versions(){var V=[
+  ['V1','/','Première version stable','old','La base : import, regroupement par empreinte, A/B, conformité plateformes, balance, séquence, transitions.'],
+  ['V2','/v2/','Refonte design instrument','old','Logotype « SAW6 » dessiné en SVG, afficheurs dot-matrix LED, faceplate (VU, knob, lampes), Master Order lisible.'],
+  ['V3','/v3/','Refonte 2 étapes','old','CHOOSE → ALBUM. Le niveau vit dans la séquence. Snapshots Master A/B/C, deltas contextuels, raccourcis instrument. Boutons faceplate réels (mono/48k/align).'],
+  ['V4','/v4/','Reference Compare','cur','Comparer ton master à une référence (fichier) : A/B audio loudness-matché + Δ « Master signature » honnête. ← version actuelle.']
+ ];
+ return '<h1>Versions</h1><p class="muted">On ne touche jamais aux anciennes : chaque refonte = une nouvelle URL. Code d\'accès : <b>saw6</b>.</p><div class="grid">'+
+  V.map(function(v){return '<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><h3>'+v[0]+'</h3><span class="pill '+v[3]+'">'+(v[3]==='cur'?'actuelle':'stable')+'</span></div>'+
+   '<div class="d">'+v[2]+'</div><div class="muted" style="margin-bottom:10px">'+v[4]+'</div><a class="open" href="'+BASE+v[1]+'" target="_blank">Ouvrir '+v[0]+' →</a></div>';}).join('')+'</div>';
+}
+function roadmap(){return '<h1>À développer</h1><p class="muted">Le backlog vivant. On coche au fur et à mesure.</p>'+
+ '<h2>V4 — Référence (suite)</h2><ul>'+
+  '<li><span class="pill todo">next</span> Courbe spectrale visuelle en overlay (réf vs master) — n°1 après le loudness selon le panel</li>'+
+  '<li>Section-matching auto (détecter le vrai refrain des deux côtés)</li>'+
+  '<li>Bibliothèque de profils de référence (chiffres par genre, sans audio — légal-clean)</li>'+
+  '<li>Persister la référence (l\'audio ne se stocke pas localement → ré-import par session)</li></ul>'+
+ '<h2>Pont vers le DAW (« vrai mastering »)</h2><ul>'+
+  '<li>Exporter les décisions : album bouncé + feuille (ordre / gains dB / gaps / marqueurs) à appliquer dans le DAW</li>'+
+  '<li>Wrapper desktop (Tauri) pour gros fichiers + dossiers surveillés — <b>sans</b> héberger de plugins</li></ul>'+
+ '<h2>Album / confort</h2><ul>'+
+  '<li>Playhead live sur les lignes album pendant la lecture</li>'+
+  '<li>Persister le mode d\'écoute / sous-mode</li></ul>'+
+ '<h2>Plateforme</h2><ul>'+
+  '<li>App iOS via Capacitor (déjà initialisé) → TestFlight</li>'+
+  '<li>Sauvegarde projet cloud + partage d\'un lien d\'avis au client</li></ul>';
+}
+function ideas(){return '<h1>Idées en vrac</h1><p class="muted">Rien ne se perd. Reformulé proprement, jamais compacté. (David dicte → on capte tout.)</p>'+
+ idea('David + Axel','Assistant IA « Lia » — guider la chaîne de mastering',
+   'Un bouton « Fait avec l\'IA » qui aide <b>pas à pas</b> à améliorer le master. Deux entrées : (1) <b>captures d\'écran</b> de la chaîne + réglages ; (2) ou juste la <b>liste des plugins possédés</b> → l\'IA propose une chaîne et des réglages avec ce que l\'user a déjà.',
+   'Pièges à régler avant de coder : ⚠️ casse le « zéro serveur » (LLM/vision = API) · diagnostic ≠ prescription (règle gravée) · confidentialité des captures (LPD) · sûrement feature premium.')+
+ idea('David','Écouter la compare référence en temps réel',
+   'Pas juste les chiffres — pouvoir <b>écouter</b> son master et la référence en A/B. → Construit en V4 : A/B audio loudness-matché, bascule zéro-latence (bouton REF + touche B).','✅ Fait en V4.')+
+ idea('David','Comparer à des références mondiales',
+   'Coller un lien YouTube ou importer un fichier, comparer à plusieurs morceaux de référence, dans CHOOSE et ALBUM.',
+   'YouTube abandonné (zéro-serveur + droit d\'auteur). → Import fichier en V4. ✅')+
+ '<div class="ph">➕ Les prochaines idées que tu dictes viennent ici, classées, jamais perdues.</div>';
+}
+function decisions(){var D=[
+  ['Structure en 2 étapes (CHOOSE → ALBUM)','Le niveau d\'un morceau n\'existe que dans la séquence → Balance n\'est pas une étape isolée. Validé par le panel.'],
+  ['YouTube abandonné (définitif)','Télécharger = casse le zéro-serveur + viole CGU + droit d\'auteur sur produit vendu. Risque > valeur. → import fichier seulement.'],
+  ['VST / héberger des plugins = NON-GOAL','Navigateur impossible ; app desktop = mini-DAW (JUCE/C++, mois) frontal contre Pro Tools/Ozone. On <b>interopère</b> (export vers le DAW), on n\'héberge pas.'],
+  ['IA = diagnostic, jamais prescription','« Observable characteristics / Master signature », jamais « comment ils ont fait ». Prétendre la recette = perte de crédibilité pro.'],
+  ['Zéro UI fake','Tout bouton/lampe affiché doit faire quelque chose de réel (mono = vraie somme mono, 48k = vraie fréquence…).'],
+  ['Bibliothèque de profils = chiffres seulement','Mesures non protégées par le droit d\'auteur ; pas d\'audio embarqué.']
+ ];
+ return '<h1>Décisions</h1><p class="muted">Les arbitrages tranchés (souvent après challenge externe d\'un panel d\'experts).</p>'+
+  D.map(function(d){return '<div class="dec"><b>'+d[0]+'</b><div class="why">'+d[1]+'</div></div>';}).join('');
+}
+function simu(){return '<h1>Simulation</h1>'+
+  '<p class="muted">Un bac à sable pour tester l\'app avec des cas générés (plusieurs morceaux × versions, niveaux variés) sans avoir à importer ses fichiers.</p>'+
+  '<div class="ph">🧪 Page de simulation — à remplir.<br><span class="muted">Idée : générer un faux album (5 morceaux, 2-3 versions chacun, loudness/ton variés) pour démontrer le flux CHOOSE → ALBUM → Référence en un clic.</span></div>';
+}
+function tuto(){return '<h1>Tutoriel</h1><p class="muted">Comprendre Master Saw6 en quelques gestes.</p>'+
+  step(1,'Importe','Glisse toutes les versions de tous tes morceaux. L\'app les regroupe par <b>empreinte audio</b> (peu importe le nom / la durée).')+
+  step(2,'Choisis (CHOOSE)','A/B les versions au même instant, zéro latence. Note, puis garde la bonne (★).')+
+  step(3,'Album','Ordonne les morceaux, règle leur <b>niveau dans la séquence</b>, regarde l\'Album Flow, façonne les raccords. Sauve des snapshots Master A/B/C.')+
+  step(4,'Référence','Importe un morceau référence → <b>▶ A/B audio</b> (ou bouton REF / touche B) : ton master vs la réf, loudness-matché. Lis le Δ « Master signature » pour comprendre <i>pourquoi</i> ça sonne différemment.')+
+  '<div class="ph" style="margin-top:18px">🎬 Captures / vidéo de démo — à ajouter.</div>';
+}
+function card(t,d){return '<div class="card"><h3>'+t+'</h3><div class="d">'+d+'</div></div>';}
+function idea(who,t,body,flags){return '<div class="idea"><div class="who">'+who+'</div><h3>'+t+'</h3><div>'+body+'</div>'+(flags?'<div class="flags">'+flags+'</div>':'')+'</div>';}
+function step(n,t,d){return '<div class="step"><div class="n">'+n+'</div><div><b>'+t+'</b><div class="muted">'+d+'</div></div></div>';}
+
+var nav=document.getElementById('nav'),main=document.getElementById('main');
+function show(id){TABS.forEach(function(tb){var on=tb.id===id;document.getElementById('nb-'+tb.id).classList.toggle('on',on);});
+  var tb=TABS.filter(function(x){return x.id===id;})[0];main.innerHTML='<div class="pane on">'+tb.render()+'</div>';window.scrollTo(0,0);
+  try{location.hash=id;}catch(e){}}
+TABS.forEach(function(tb){var b=document.createElement('button');b.id='nb-'+tb.id;b.textContent=tb.t;b.onclick=function(){show(tb.id);};nav.appendChild(b);});
+show((location.hash||'').replace('#','')||'over');
+
+// gate
+(function(){var G=document.getElementById('pwgate');try{if(sessionStorage.getItem('msaw6_ok')==='1'){G.remove();return;}}catch(e){}
+  var IN=document.getElementById('pwin'),GO=document.getElementById('pwgo'),ER=document.getElementById('pwerr');
+  function check(){if((IN.value||'').trim().toLowerCase()==='saw6'){try{sessionStorage.setItem('msaw6_ok','1');}catch(e){}G.remove();}else{ER.style.display='block';IN.value='';IN.focus();}}
+  GO.onclick=check;IN.addEventListener('keydown',function(e){if(e.key==='Enter')check();});setTimeout(function(){try{IN.focus();}catch(e){}},100);})();
+</script>
+</body></html>
