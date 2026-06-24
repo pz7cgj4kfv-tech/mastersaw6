@@ -591,14 +591,14 @@
 </style>
 </head>
 <body>
-<div id="pwgate" style="position:fixed;inset:0;z-index:99999;background:#f4f2ec;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:'Helvetica Neue',Helvetica,system-ui,sans-serif;color:#1c1a17;padding:env(safe-area-inset-top,0) 20px env(safe-area-inset-bottom,0)">
-  <svg width="220" height="70" viewBox="0 0 500 158" aria-label="Saw6"><g fill="none" stroke="#1c1a17" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(0,9)" d="M92 30 C72 4 12 6 12 44 C12 73 88 67 88 100 C88 136 28 138 8 110"/><path transform="translate(132,9)" d="M0 140 L50 0 L100 140 M21 96 L79 96"/><path transform="translate(264,9)" d="M2 6 L26 140 L50 56 L74 140 L98 6"/></g><path transform="translate(396,9)" fill="none" stroke="#E08A1E" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round" d="M74 14 C42 2 16 30 16 80 C16 122 86 122 86 86 C86 56 28 50 16 78"/></svg>
-  <div style="font-size:11px;letter-spacing:.28em;color:#9a7b48;text-transform:uppercase">Transient Lab'z · private beta</div>
+<div id="pwgate" style="position:fixed;inset:0;z-index:99999;background:#1a1410;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:'Helvetica Neue',Helvetica,system-ui,sans-serif;color:#e7dcc6;padding:env(safe-area-inset-top,0) 20px env(safe-area-inset-bottom,0)">
+  <svg width="220" height="70" viewBox="0 0 500 158" aria-label="Saw6"><g fill="none" stroke="#e7dcc6" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round"><path transform="translate(0,9)" d="M92 30 C72 4 12 6 12 44 C12 73 88 67 88 100 C88 136 28 138 8 110"/><path transform="translate(132,9)" d="M0 140 L50 0 L100 140 M21 96 L79 96"/><path transform="translate(264,9)" d="M2 6 L26 140 L50 56 L74 140 L98 6"/></g><path transform="translate(396,9)" fill="none" stroke="#ffb43a" stroke-width="13.5" stroke-linecap="round" stroke-linejoin="round" d="M74 14 C42 2 16 30 16 80 C16 122 86 122 86 86 C86 56 28 50 16 78"/></svg>
+  <div style="font-size:11px;letter-spacing:.28em;color:#A8895E;text-transform:uppercase">Transient Lab'z · private beta</div>
   <div style="display:flex;gap:8px;align-items:center">
-    <input id="pwin" type="password" placeholder="access code" autocomplete="off" autocapitalize="off" spellcheck="false" style="background:#ffffff;border:1px solid #cfc8ba;border-radius:8px;padding:12px 14px;color:#1c1a17;font-size:15px;letter-spacing:.05em;width:200px;outline:none;box-shadow:inset 0 1px 2px rgba(0,0,0,.05)">
-    <button id="pwgo" style="background:#E08A1E;border:none;border-radius:8px;padding:12px 18px;font-weight:800;color:#fff;font-size:14px;cursor:pointer">Enter</button>
+    <input id="pwin" type="password" placeholder="access code" autocomplete="off" autocapitalize="off" spellcheck="false" style="background:#120f0c;border:1px solid #3a3128;border-radius:8px;padding:12px 14px;color:#e7dcc6;font-size:15px;letter-spacing:.05em;width:200px;outline:none">
+    <button id="pwgo" style="background:#ffb43a;border:none;border-radius:8px;padding:12px 18px;font-weight:800;color:#1a1410;font-size:14px;cursor:pointer">Enter</button>
   </div>
-  <div id="pwerr" style="display:none;color:#c0392b;font-size:12px">Wrong code</div>
+  <div id="pwerr" style="display:none;color:#ff7a6b;font-size:12px">Wrong code</div>
 </div>
 <script>(function(){var G=document.getElementById('pwgate');
   try{if(sessionStorage.getItem('msaw6_ok')==='1'){G.remove();return;}}catch(e){}
@@ -1643,7 +1643,7 @@ function importProject(file){const r=new FileReader();r.onload=()=>{try{const d=
   else toast('📂 Project loaded — drop your audio files back in, everything snaps into place');
 }catch(e){toast('Invalid project file');}};r.readAsText(file);}
 /* ===== Version (hexa, discret) + panneau À propos ===== */
-const APP_BUILD=4; // V4 — bump à chaque deploy
+const APP_BUILD=5; // V4 — bump à chaque deploy
 const BUILD_HEX='V4·0x'+APP_BUILD.toString(16).toUpperCase();
 $('#verTag').textContent=BUILD_HEX;
 $('#aboutVer').textContent='build '+BUILD_HEX;
