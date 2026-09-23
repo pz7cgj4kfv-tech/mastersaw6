@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icone-180.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1336,7 +1336,7 @@ body.tel .modele{ font-size:8.5px }
     <button id="boucle" class="on">Boucle</button>
     <button id="tout">Tout</button>
     <button id="zoomSel">Zoom sélection</button>
-    <button id="selIci">Sél. d'ici à la fin</button>
+    <button id="selIci">D'ici → fin</button>
     <button id="selTout">Tout sélectionner</button>
     <button id="selVide">Effacer la sél.</button>
     <button id="ecouteDefil" class="on" title="Entendre le son en déplaçant la tête de lecture">Écoute au défilement</button>
@@ -1498,7 +1498,7 @@ body.tel .modele{ font-size:8.5px }
     <button id="multiExporter" title="Un ZIP : WAV (note gravée dedans) + SFZ + Decent Sampler + mode d'emploi Ableton / Kontakt / Battery">Exporter l'instrument</button>
     <span id="multiEtat" class="etat"></span>
   </div>
-  <div id="multiGuideTexte" hidden class="petit" style="margin:0 0 10px;line-height:1.55;max-width:820px"></div>
+  <div id="multiGuideTexte" hidden style="margin:0 0 10px;line-height:1.55;max-width:820px;font-size:13px;text-transform:none;letter-spacing:0"></div>
   <div id="multiListe" hidden style="display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px"></div>
   <div id="instClavier"></div>
   <p class="aide">
@@ -2316,10 +2316,12 @@ async function listerFichiers(){
   if(!serveurOK){
     // sans Mac : la liste, ce sont les fichiers importés sur cet appareil
     const sl = $('#fichier'); sl.innerHTML = ''; groupes = new Set();
+    if(!BDD.relu){ BDD.relu = true; for(const [n, ab] of await BDD.tous()) if(!LOCAL.has(n)) LOCAL.set(n, ab); }   // fichiers gardés sur l'appareil
     // rien d'importé : pas de menu à moitié vide à côté du bouton (retour David 23.09), juste « Importer »
     sl.hidden = !LOCAL.size;
     if(!LOCAL.size) return;
     for(const nom of LOCAL.keys()){ const o = document.createElement('option'); o.value = nom; o.textContent = nom; sl.appendChild(o); }
+    try{ const d = localStorage.getItem('labz-dernier'); if(d && LOCAL.has(d)) sl.value = d; }catch(e){}   // on rouvre le dernier fichier
     return;
   }
   const r = await fetch('/api/fichiers');
@@ -2369,7 +2371,7 @@ async function charger(nom){
   }
   try{
     let ab;
-    if(LOCAL.has(nom)) ab = LOCAL.get(nom).slice(0);   // copie : decodeAudioData détache le buffer
+    if(LOCAL.has(nom)){ ab = LOCAL.get(nom).slice(0); try{ localStorage.setItem('labz-dernier', nom); }catch(e){} }   // copie : decodeAudioData détache le buffer
     else{
       const r = await fetch('/audio/' + encodeURIComponent(nom));
       if(!r.ok) throw new Error('introuvable');
@@ -3289,7 +3291,12 @@ $('#decouper').addEventListener('click', () => {
   $('#etatTranches').className = 'etat ok';
   redessiner();
 });
-$('#sensi').addEventListener('change', () => { if(tranches.length) $('#decouper').click(); });
+$('#sensi').addEventListener('change', () => {
+  // Bouger le curseur = mode MANUEL. Avant, « Sensibilité auto » restait allumée et écrasait la valeur à chaque
+  // découpe : le curseur avait l'air de ne rien faire (retour David 23.09).
+  $('#sensiAuto').classList.remove('on');
+  if(tranches.length) $('#decouper').click();
+});
 /// Corriger l'algorithme à la main : c'est plus honnête que de prétendre qu'il ne se
 /// trompe jamais. Alt + clic sur l'onde fait la même chose.
 function ajouterMarque(ech){
@@ -3551,7 +3558,8 @@ $('#selTout').addEventListener('click', ()=>{ if(!buffer)return;
 $('#selVide').addEventListener('click', ()=>{ if(!buffer)return;
   sel = {debut:0, fin:0}; majCompteurs(curseur); redessiner(); if(enLecture) jouer(); });
 $('#boucle').addEventListener('click', e => { e.target.classList.toggle('on'); if(enLecture) jouer(); });
-$('#tout').addEventListener('click', ()=>{ if(!buffer)return; vue={debut:0,fin:buffer.length}; sel={debut:0,fin:buffer.length}; redessiner(); });
+$('#tout').addEventListener('click', ()=>{ if(!buffer)return; vue={debut:0,fin:buffer.length}; sel={debut:0,fin:buffer.length}; redessiner();
+  const b = $('#tout'); b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 700); });   // retour visible (« il ne se passe rien »)
 $('#zoomSel').addEventListener('click', ()=>{ if(!buffer||sel.fin<=sel.debut)return;
   const m=Math.max(8,Math.round((sel.fin-sel.debut)*0.06));
   vue={debut:Math.max(0,sel.debut-m), fin:Math.min(buffer.length,sel.fin+m)}; redessiner(); });
@@ -3652,6 +3660,17 @@ const DANS_APP = !!window.Capacitor || location.protocol === 'capacitor:'
               || (location.hostname === 'localhost' && !location.port && location.protocol !== 'http:');
 let serveurOK = null;                 // null = pas encore sondé
 const LOCAL = new Map();              // nom -> ArrayBuffer : fichiers importés sur cet appareil
+// Mémoire durable de l'appareil (IndexedDB) : les fichiers importés survivent à la fermeture de l'app.
+const BDD = { db: null, relu: false,
+  ouvrir(){ return new Promise(res => { try{ const r = indexedDB.open('labz-fichiers', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('fichiers'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }catch(e){ res(null); } }); },
+  async base(){ if(!this.db) this.db = await this.ouvrir(); return this.db; },
+  async garder(nom, ab){ const db = await this.base(); if(!db) return; try{ db.transaction('fichiers', 'readwrite').objectStore('fichiers').put(ab, nom); }catch(e){} },
+  async oublier(nom){ const db = await this.base(); if(!db) return; try{ db.transaction('fichiers', 'readwrite').objectStore('fichiers').delete(nom); }catch(e){} },
+  async tous(){ const db = await this.base(); if(!db) return [];
+    return new Promise(res => { try{ const st = db.transaction('fichiers').objectStore('fichiers'), k = st.getAllKeys(), v = st.getAll();
+      v.onsuccess = () => res((k.result || []).map((n, i) => [n, v.result[i]])); v.onerror = () => res([]); }catch(e){ res([]); } }); }
+};
 async function sonderServeur(){
   if(serveurOK !== null) return serveurOK;
   try{
@@ -3673,7 +3692,7 @@ async function sonderServeur(){
   return serveurOK;
 }
 const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'exporterTranches',
-                       'enregistrer', 'enregistrerProjet', 'ouvrirProjet'];
+                       'enregistrer', 'enregistrerProjet', 'ouvrirProjet', 'versAbleton'];
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
     const st = document.createElement('style'); st.id = 'styleAutonome';
@@ -3891,9 +3910,12 @@ async function envoyerFichier(f, dossier){
   const e = $('#infos');
   await sonderServeur();
   if(!serveurOK){
-    // sans Mac : le fichier reste sur l'appareil, décodé à la demande dans charger()
+    // sans Mac : le fichier reste sur l'appareil, décodé à la demande dans charger(), et GARDÉ d'un lancement à
+    // l'autre (IndexedDB) : « quand je relance l'app, il doit garder ce que je fais » (David 23.09)
     e.textContent = 'lecture de ' + f.name + '…'; e.className = 'etat';
-    LOCAL.set(f.name, await f.arrayBuffer());
+    const ab = await f.arrayBuffer();
+    LOCAL.set(f.name, ab);
+    BDD.garder(f.name, ab);
     e.textContent = f.name + ' · sur cet appareil'; e.className = 'etat ok';
     return f.name;
   }
@@ -7408,8 +7430,11 @@ const inst = {
 
 /// Convention FRANÇAISE, celle que David utilise : le la 440 est un la3. La notation
 /// scientifique en ferait un la4. On suit sa pratique, pas la « meilleure » version.
+/// Lettres ANGLAISES sur le clavier (demande David 23.09 : « C D E… B, pas do ré mi »), octave Ableton : C3 = 60,
+/// ce qui reste cohérent avec « la3 = 440 Hz » (A3 = 69). Les noms français restent acceptés à la saisie (midiDepuisTexte).
+const NOTES_EN = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
 function instNom(midi){
-  return NOTES_NOM[((midi % 12) + 12) % 12] + (Math.floor(midi/12) - 2);
+  return NOTES_EN[((midi % 12) + 12) % 12] + (Math.floor(midi/12) - 2);
 }
 
 /// CORRECTION D'OCTAVE. YIN se trompe d'octave sur les sons riches : mesuré sur un mi
@@ -7560,8 +7585,10 @@ function extraireZone(b, d0, d1){
 function midiDepuisTexte(s){
   s = (s||'').trim().toLowerCase().replace(/^re(?=[#\-\d])/, 'ré');
   if(/^\d+$/.test(s)) return parseInt(s, 10);
-  const m = s.match(/^(do|ré|mi|fa|sol|la|si)(#?)(-?\d)$/); if(!m) return null;
-  const idx = NOTES_NOM.indexOf(m[1] + m[2]); if(idx < 0) return null;
+  let m = s.match(/^(do|ré|mi|fa|sol|la|si)(#?)(-?\d)$/), idx = -1;
+  if(m) idx = NOTES_NOM.indexOf(m[1] + m[2]);
+  else { m = s.match(/^([a-g])(#?)(-?\d)$/); if(m) idx = NOTES_EN.map(n => n.toLowerCase()).indexOf(m[1] + m[2]); }   // e1, f#1…
+  if(!m || idx < 0) return null;
   return (parseInt(m[3],10) + 2)*12 + idx;   // instNom : octave = floor(midi/12) − 2
 }
 function multiGuideTexte(type){
@@ -7571,8 +7598,9 @@ function multiGuideTexte(type){
                : type === 'guitare' ? 'corde par corde (mi grave → mi aigu), case 0 puis 1, 2… jusqu’à 12'
                : 'du grave vers l’aigu, un demi-ton à la fois';
   return '<b>Sur ton enregistreur</b> (48 kHz / 24 bit si possible, sans effet, niveau fort sans saturer) : joue '
-    + cordes + '. <b>Chaque note deux fois</b> : une <b>longue</b> (laisse sonner jusqu’au silence, 6 s max), puis une '
-    + '<b>courte</b> (étouffée). <b>Laisse 1 seconde de silence</b> entre chaque note : c’est ce silence qui me sert à découper.'
+    + cordes + '. <b>Chaque note deux fois</b> : une <b>longue</b> (tu la laisses sonner jusqu’au silence, 6 s max), puis une '
+    + '<b>courte</b> (tu joues, puis tu étouffes avec la paume tout de suite après l’attaque, moins d’une seconde). '
+    + '<b>Laisse 1 seconde de silence</b> entre chaque note : c’est ce silence qui me sert à découper.'
     + '<br>Notes attendues (' + notes.length + ') : ' + notes.join(' · ')
     + '<br>Ensuite : Source → Importer le fichier, puis « Découper et reconnaître ce son ».';
 }
@@ -7748,6 +7776,13 @@ $('#multiType')?.addEventListener('change', () => { const g = $('#multiGuideText
 /* ---------- le clavier ---------- */
 function instEnfoncer(midi){
   if(inst.voix.has(midi)) return;
+  // TÉLÉPHONE : MONOPHONIQUE. Une nouvelle note coupe la précédente (retour David 23.09 : « quand je touche
+  // d'autres notes il ne les joue pas, il continue de jouer tout le morceau »). Au pouce, l'empilement de
+  // voix qui jouent chacune le morceau entier n'est pas un instrument, c'est du bruit.
+  if(document.body.classList.contains('tel')){
+    for(const [m, v] of inst.voix){ instRelacher(v); instTouche(m, false); }
+    inst.voix.clear();
+  }
   // Vol de voix : au-delà de huit notes tenues, la plus ancienne s'éteint. Sans
   // ça, un accord plaqué au clavier fait grimper le niveau sans limite et sature.
   if(inst.voix.size >= 8){
@@ -8351,6 +8386,46 @@ function grilleFermer(){
     t.querySelectorAll('button[data-cible]').forEach(b => b.addEventListener('click', () => { const c = document.getElementById(b.dataset.cible); if(c) c.click(); }));
     t.querySelector('#tiroirPlus').addEventListener('click', () => { document.body.classList.toggle('tiroirOuvert'); setTimeout(() => { try{ redessiner(); }catch(e){} }, 60); });
     po.appendChild(t);
+    // deuxième rangée, TOUT PETITS boutons (demande David) : zoom −/+ autour de la tête, tout voir, bords de la boucle, suivre, annuler
+    const mini = document.createElement('div'); mini.id = 'tiroirMini';
+    mini.innerHTML = '<button data-z="out" title="Dézoomer autour de la tête">−</button><button data-z="in" title="Zoomer autour de la tête">+</button>'
+                   + '<button data-z="tout" title="Voir tout le morceau">⤢</button>'
+                   + '<button data-z="debut" title="Zoomer sur le début de la boucle">|←</button><button data-z="fin" title="Zoomer sur la fin de la boucle">→|</button>'
+                   + '<button id="miniSuivre" title="La vue suit la tête de lecture">Suivre</button>'
+                   + '<button id="miniAnnuler" title="Annuler la dernière découpe / marque / effacement">↶</button>';
+    function zoomVue(centre, facteur){
+      if(!buffer) return;
+      let n = Math.max(8, Math.min(buffer.length, (vue.fin - vue.debut) * facteur));
+      let d = centre - n/2, f = d + n;
+      if(d < 0){ f -= d; d = 0; } if(f > buffer.length){ d -= (f - buffer.length); f = buffer.length; }
+      vue = {debut: Math.max(0, Math.round(d)), fin: Math.min(buffer.length, Math.round(f))}; redessiner();
+    }
+    mini.querySelectorAll('button[data-z]').forEach(b => b.addEventListener('click', () => {
+      if(!buffer) return;
+      const z = b.dataset.z, aSel = sel.fin - sel.debut > 1;
+      if(z === 'out') zoomVue(curseur, 1.8);
+      else if(z === 'in') zoomVue(curseur, 1/1.8);
+      else if(z === 'tout'){ vue = {debut:0, fin:buffer.length}; redessiner(); }
+      else if(z === 'debut'){ if(aSel){ zoomVue(sel.debut, Math.min(1, (buffer.sampleRate*2)/(vue.fin - vue.debut))); } }
+      else if(z === 'fin'){ if(aSel){ zoomVue(sel.fin, Math.min(1, (buffer.sampleRate*2)/(vue.fin - vue.debut))); } }
+    }));
+    const ms = mini.querySelector('#miniSuivre'), st0 = document.getElementById('suivreTete');
+    if(st0){ ms.classList.toggle('on', st0.classList.contains('on')); ms.addEventListener('click', () => { st0.click(); ms.classList.toggle('on', st0.classList.contains('on')); }); }
+    mini.querySelector('#miniAnnuler').addEventListener('click', () => { try{ annuler(); redessiner(); }catch(e){} });
+    po.appendChild(mini);
+    // le tiroir = UN SEUL défilement : transport + découpe dans un même conteneur (David : « deux onglets où je peux descendre »)
+    const wrap = document.createElement('div'); wrap.id = 'tiroirContenu';
+    po.after(wrap);
+    const pt = document.getElementById('panneauTransport'), pd = document.getElementById('panneauDecoupe');
+    if(pt) wrap.appendChild(pt); if(pd) wrap.appendChild(pd);
+  }
+  // appui LONG sur ◀◀ / ▶▶ : on continue tant que le doigt reste (retour David 23.09)
+  for(const [id, cible] of [['telRecul','reculer'], ['telAvance','avancer']]){
+    const b = document.getElementById(id); if(!b) continue;
+    let timer = null;
+    const stop = () => { if(timer){ clearInterval(timer); timer = null; } };
+    b.addEventListener('pointerdown', () => { stop(); timer = setInterval(() => { const c = document.getElementById(cible); if(c) c.click(); }, 130); });
+    b.addEventListener('pointerup', stop); b.addEventListener('pointercancel', stop); b.addEventListener('pointerleave', stop);
   }
   // le ← Studio quitte la façade (cachée sur téléphone) pour l'écran Source
   const retour = document.querySelector('.facade a[href="../index.html"], .facade a[href="../v4/"]');
@@ -8372,9 +8447,23 @@ function grilleFermer(){
     'body.tel #panneauOnde.montre #vue{flex:1;height:auto!important;min-height:120px}',
     'body.tel #panneauOnde.montre #apercu{height:40px}',
     'body.tel[data-ecran="jouer"] #panneauOnde{display:none!important}',
-    'body.tel #panneauTransport.montre,body.tel #panneauDecoupe.montre{display:none!important}',
-    'body.tel.tiroirOuvert #panneauTransport.montre,body.tel.tiroirOuvert #panneauDecoupe.montre{display:block!important;flex:1 1 0;min-height:0;overflow:auto}',
-    'body.tel.tiroirOuvert #panneauOnde.montre{flex:0 0 32vh;min-height:0}',
+    'body.tel[data-ecran="onde"]:not(.tiroirOuvert) #tiroirContenu{display:none}',
+    'body.tel.tiroirOuvert #tiroirContenu{display:block;flex:1 1 0;min-height:0;overflow:auto;margin:0 8px;-webkit-overflow-scrolling:touch}',
+    'body.tel.tiroirOuvert #tiroirContenu .panneau.montre{display:block!important;overflow:visible;margin:0 0 8px;padding:8px 10px}',
+    'body.tel.tiroirOuvert #panneauOnde.montre{flex:0 0 30vh;min-height:0}',
+    'body.tel #tiroirMini{display:flex;gap:5px;padding:6px 0 0;flex:none}',
+    'body.tel #tiroirMini button{flex:1;min-width:0;min-height:30px;padding:0 4px;font-size:12px;letter-spacing:0;text-transform:none;border-radius:8px}',
+    'body.tel #tiroirMini button::before{display:none}',
+    'body.tel #tiroirMini button.on{background:#f0a63a;color:#2a1a03}',
+    /* tiroir compact : rangées serrées, note de séance cachée, curseurs assez gros pour le pouce */
+    'body.tel #tiroirContenu .rangee{gap:6px;margin-bottom:6px}',
+    'body.tel #tiroirContenu button{min-height:38px;padding:0 10px 0 26px;font-size:12.5px}',   /* 26px à gauche : la pastille lumineuse vit là */
+    'body.tel #panneauDecoupe .rangee:has(#note){display:none}',
+    'body.tel input[type=range]{height:32px;min-width:120px}',
+    'body.tel input[type=range]::-webkit-slider-thumb{width:28px;height:28px}',
+    'body.tel button,body.tel .touche,body.tel .molette{touch-action:manipulation}',
+    'body.tel #panneauInstrument.montre{overflow-x:hidden}',
+    'body.tel #instNote{font-size:18px;font-weight:800}',
     'body.tel #tiroirTel{display:flex;gap:6px;padding:8px 0 0;flex:none}',
     'body.tel #tiroirTel button{flex:1;min-width:0;min-height:42px;padding:0 6px;font-size:12px;letter-spacing:0;text-transform:none}',
     'body.tel #tiroirTel button::before{display:none}',
