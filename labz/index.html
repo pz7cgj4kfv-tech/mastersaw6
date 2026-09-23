@@ -1343,7 +1343,6 @@ body.tel .modele{ font-size:8.5px }
     <button id="suivreTete" class="on" title="Le cadre suit la tête de lecture">Suivre la tête</button>
     <button id="pleinEcran" title="L'onde prend tout l'écran (Échap ou F pour sortir)">Plein écran</button>
     <button id="nouveau" title="Tout lâcher et charger autre chose">Nouveau</button>
-    <span id="etatTraitement" class="etat"></span>
   </div>
   <div class="rangee" style="gap:22px">
     <span class="compteur" id="selInfo">aucune sélection</span>
@@ -1357,6 +1356,7 @@ body.tel .modele{ font-size:8.5px }
           <button data-v="1">1 ×</button><button data-d="0.05">+</button><button data-v="2">×2</button>
         </div>
         <button id="tonalite" class="on mini" title="Allumé : la vitesse change sans toucher à la hauteur (étirement WSOLA). Éteint : comme une bande, la hauteur suit la vitesse.">garde la tonalité</button>
+        <span id="etatTraitement" class="etat"></span>
       </div>
       <div class="tranche">
         <label class="petit">Hauteur</label>
@@ -2570,6 +2570,8 @@ function placerCurseur(ech, relancer, ecouter){
   majCompteurs(curseur);
   redessiner();
   if(ecouter) scrub(curseur);
+  // la tête posée hors de la sélection change la zone qui joue : la zone traitée doit suivre
+  if(!ecouter && !reglagesNeutres()){ const z = zoneLecture(); if(!zoneTraitee || zoneTraitee.d !== z.d || zoneTraitee.f !== z.f) preparerTraitement(); }
   if(relancer && enLecture) jouer();
 }
 
@@ -3053,7 +3055,10 @@ async function preparerTraitement(){
   const z = zoneLecture();
   const duree = (z.f - z.d)/buffer.sampleRate;
   if(duree > MAX_TRAITEMENT){
-    e.textContent = `zone trop longue (${duree.toFixed(0)} s), sélectionne moins de ${MAX_TRAITEMENT} s`;
+    const garde0 = $('#tonalite').classList.contains('on');
+    e.textContent = garde0
+      ? `garde la tonalité : seulement sur une boucle de moins de ${MAX_TRAITEMENT} s (ici ${duree.toFixed(0)} s), la vitesse joue à la bande`
+      : `hauteur : seulement sur une boucle de moins de ${MAX_TRAITEMENT} s (ici ${duree.toFixed(0)} s)`;
     e.className = 'etat mal';
     return;
   }
@@ -3584,11 +3589,11 @@ $('#fin').addEventListener('click', ()=>{ if(buffer) placerCurseur(buffer.length
 $('#reculer').addEventListener('click', ()=>{ if(buffer) placerCurseur(curseur - buffer.sampleRate, true); });
 $('#avancer').addEventListener('click', ()=>{ if(buffer) placerCurseur(curseur + buffer.sampleRate, true); });
 $('#selIci').addEventListener('click', ()=>{ if(!buffer)return;
-  sel = {debut: Math.round(curseur), fin: buffer.length}; majCompteurs(curseur); redessiner(); if(enLecture) jouer(); });
+  sel = {debut: Math.round(curseur), fin: buffer.length}; majCompteurs(curseur); redessiner(); preparerTraitement(); if(enLecture) jouer(); });
 $('#selTout').addEventListener('click', ()=>{ if(!buffer)return;
-  sel = {debut:0, fin:buffer.length}; majCompteurs(curseur); redessiner(); if(enLecture) jouer(); });
+  sel = {debut:0, fin:buffer.length}; majCompteurs(curseur); redessiner(); preparerTraitement(); if(enLecture) jouer(); });
 $('#selVide').addEventListener('click', ()=>{ if(!buffer)return;
-  sel = {debut:0, fin:0}; majCompteurs(curseur); redessiner(); if(enLecture) jouer(); });
+  sel = {debut:0, fin:0}; majCompteurs(curseur); redessiner(); preparerTraitement(); if(enLecture) jouer(); });
 $('#boucle').addEventListener('click', e => { e.target.classList.toggle('on'); if(enLecture) jouer(); });
 $('#tout').addEventListener('click', ()=>{ if(!buffer)return; vue={debut:0,fin:buffer.length}; sel={debut:0,fin:buffer.length}; redessiner();
   const b = $('#tout'); b.classList.add('on'); setTimeout(() => b.classList.remove('on'), 700); });   // retour visible (« il ne se passe rien »)
