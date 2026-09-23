@@ -1836,9 +1836,28 @@ function audio(){
   if(!ctx){
     const C = window.AudioContext||window.webkitAudioContext;
     try{ ctx = new C({latencyHint: indiceLatence()}); }catch(e){ ctx = new C(); }
+    // iOS coupe le contexte quand l'écran se verrouille ou qu'un appel arrive (« interrupted ») :
+    // on le relance dès qu'on peut, tant qu'une lecture est en cours.
+    ctx.onstatechange = () => { if(ctx.state !== 'running' && (enLecture || (typeof maquette !== 'undefined' && maquette.joue))) { try{ ctx.resume(); }catch(e){} } };
   }
   return ctx;
 }
+/* ---------- son en arrière-plan (demande David 23.09 : « que ça continue quand j'éteins le téléphone ») ----------
+   Côté natif, l'app a déjà la session audio « playback » et le mode arrière-plan audio (Info.plist).
+   Mais WebKit ne garde la session ouverte que si un <audio> joue : ce silence en boucle, lancé au
+   premier geste, tient la porte ouverte pour la Web Audio API. Non vérifié sur téléphone au 23.09. */
+let veilleuse = null;
+function tenirLeSon(){
+  if(veilleuse || !DANS_APP) return;
+  try{
+    veilleuse = document.createElement('audio');
+    veilleuse.src = 'data:audio/wav;base64,UklGRvQHAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YdAHAACAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+    veilleuse.loop = true; veilleuse.volume = 0.01; veilleuse.setAttribute('playsinline', '');
+    veilleuse.play().catch(() => { veilleuse = null; });
+  }catch(e){ veilleuse = null; }
+}
+window.addEventListener('pointerdown', tenirLeSon, {once: true});
+document.addEventListener('visibilitychange', () => { if(!document.hidden && ctx && ctx.state !== 'running' && enLecture) { try{ ctx.resume(); }catch(e){} } });
 function dpr(){ return Math.min(window.devicePixelRatio||1, 2); }
 
 function caler(c){
@@ -2469,6 +2488,7 @@ function stopper(){
   idLecture++;                       // tout ce qui vient de l'ancienne lecture est périmé
   if(typeof arreterNavette === 'function') arreterNavette();
   toutFaireTaire();
+  arreterDirect();
   if(source){
     source.onended = null;           // sinon elle tuera la lecture suivante
     try{ source.stop(); }catch(e){}
@@ -2498,6 +2518,34 @@ async function jouer(){
   gainNode.gain.value = parseFloat($('#volume').value);
   source.connect(gainNode).connect(a.destination);
   const boucler = z.boucle && $('#boucle').classList.contains('on');
+  if(!reglagesNeutres()){
+    // EN DIRECT : vitesse et hauteur sur toute la zone, quelle que soit sa durée.
+    const g = reglagesDirect();
+    const canaux = []; for(let c=0;c<buffer.numberOfChannels;c++) canaux.push(buffer.getChannelData(c));
+    moteur = new MoteurDirect(canaux, buffer.sampleRate, z.d, z.f, boucler);
+    moteur.regler(g.alpha, g.r);
+    noeudDirect = a.createScriptProcessor(4096, 1, buffer.numberOfChannels);
+    silenceDirect = a.createConstantSource(); silenceDirect.offset.value = 0;
+    silenceDirect.connect(noeudDirect); silenceDirect.start();   // Safari veut une entrée pour cadencer le nœud
+    const m = moteur;
+    noeudDirect.onaudioprocess = ev => {
+      const outs = []; for(let c=0;c<ev.outputBuffer.numberOfChannels;c++) outs.push(ev.outputBuffer.getChannelData(c));
+      m.tirer(outs, ev.outputBuffer.length);
+      if(m.termine && mien === idLecture && moteur === m){
+        setTimeout(() => { if(mien !== idLecture) return; curseur = z.d; stopper(); majCompteurs(curseur); redessiner(); }, 0);
+        m.termine = false;
+      }
+    };
+    noeudDirect.connect(gainNode);
+    source = null;
+    tDepart = a.currentTime; posDepart = z.d/buffer.sampleRate;
+    enLecture = true;
+    $('#jouer').classList.add('on'); $('#jouer').textContent = 'Stop';
+    $('#etatTraitement').textContent = `× ${g.s.toFixed(2)} · ${g.demi>0?'+':''}${g.demi} demi-ton${Math.abs(g.demi)>1?'s':''}` + (g.garde ? '' : ' · bande') + ' · en direct';
+    $('#etatTraitement').className = 'etat ok';
+    suivre();
+    return;
+  }
   const traite = bufTraite && zoneTraitee && zoneTraitee.d === z.d && zoneTraitee.f === z.f;
   let d, f;
   if(traite){
@@ -2533,6 +2581,7 @@ async function jouer(){
 function positionCourante(){
   if(!buffer) return curseur;
   if(!enLecture) return curseur;
+  if(moteur) return Math.max(0, Math.min(buffer.length, moteur.position()));
   const a = audio();
   const vit = parseFloat($('#vitesse').value);
   const z = zoneLecture();
@@ -2592,8 +2641,6 @@ function placerCurseur(ech, relancer, ecouter){
   majCompteurs(curseur);
   redessiner();
   if(ecouter) scrub(curseur);
-  // la tête posée hors de la sélection change la zone qui joue : la zone traitée doit suivre
-  if(!ecouter && !reglagesNeutres()){ const z = zoneLecture(); if(!zoneTraitee || zoneTraitee.d !== z.d || zoneTraitee.f !== z.f) preparerTraitement(); }
   if(relancer && enLecture) jouer();
 }
 
@@ -3036,7 +3083,108 @@ function wsola(canaux, d0, d1, facteur, sr){
   });
 }
 
-const MAX_TRAITEMENT = 40;   // secondes : au-delà on ne traite pas, on prévient
+/* ---------- lecture EN DIRECT : vitesse et hauteur sur TOUT le morceau ----------
+   Demande David 23.09 : « par défaut, garder la tonalité du morceau entier, sans boucle ».
+   Avant, l'étirement se calculait à l'avance, refusait au-delà de 40 s, et la lecture
+   retombait en mode bande sans le dire. Ici le MÊME WSOLA tourne au fil de l'eau, dans un
+   ScriptProcessorNode, en lisant directement les canaux du morceau : pas de copie, pas de
+   limite de durée, et les curseurs agissent pendant la lecture.
+   alpha = facteur d'étirement (r/s), r = rapport de hauteur lu en fractionnaire.        */
+class MoteurDirect {
+  constructor(canaux, sr, d0, d1, boucle){
+    this.canaux = canaux; this.nc = canaux.length; this.sr = sr;
+    this.d0 = d0; this.d1 = d1; this.n = d1 - d0; this.boucle = boucle;
+    this.N = Math.max(512, Math.round(sr*0.046) & ~1); this.Hs = this.N >> 1; this.rech = Math.round(this.N/6);
+    this.fen = new Float32Array(this.N);
+    for(let i=0;i<this.N;i++) this.fen[i] = 0.5 - 0.5*Math.cos(2*Math.PI*i/(this.N-1));
+    this.acc = []; for(let c=0;c<this.nc;c++) this.acc.push(new Float32Array(this.N));
+    this.accW = new Float32Array(this.N);
+    this.precedent = new Float32Array(this.Hs);
+    this.seg = new Float32Array(2*this.rech + this.Hs + 8);
+    this.posA = 0; this.premier = true; this.fini = false; this.termine = false;
+    this.cap = 1 << 16; this.res = []; for(let c=0;c<this.nc;c++) this.res.push(new Float32Array(this.cap));
+    this.resLen = 0; this.resPos = 0;
+    this.avance = 0;                         // échantillons d'ENTRÉE déjà entendus (pour la tête)
+    this.regler(1, 1);
+  }
+  regler(alpha, r){ this.alpha = alpha; this.Ha = Math.max(1, Math.round(this.Hs/alpha)); this.r = r; }
+  mono1(j){ let v = 0; for(let c=0;c<this.nc;c++) v += this.canaux[c][this.d0+j]; return v/this.nc; }
+  trame(){
+    const N = this.N, Hs = this.Hs, n = this.n;
+    if(this.posA + N > n){
+      if(!this.boucle || n < N){ this.fini = true; return false; }
+      this.posA = 0; this.premier = true;
+    }
+    let best = Math.round(this.posA);
+    if(!this.premier){
+      const a = Math.max(0, best - this.rech), b = Math.max(a, Math.min(n - N, best + this.rech));
+      const L = b - a + Hs, seg = this.seg;
+      for(let i=0;i<L;i++) seg[i] = this.mono1(a+i);
+      let score = -Infinity;
+      for(let k=a;k<=b;k++){
+        let s2 = 0; const o = k - a;
+        for(let i=0;i<Hs;i+=8) s2 += this.precedent[i]*seg[o+i];
+        if(s2 > score){ score = s2; best = k; }
+      }
+    }
+    for(let c=0;c<this.nc;c++){
+      const src = this.canaux[c], dst = this.acc[c], o = this.d0 + best, fen = this.fen;
+      for(let i=0;i<N;i++) dst[i] += src[o+i]*fen[i];
+    }
+    for(let i=0;i<N;i++) this.accW[i] += this.fen[i];
+    for(let i=0;i<Hs;i++){ const j = best + Hs + i; this.precedent[i] = j < n ? this.mono1(j) : 0; }
+    // les Hs premiers échantillons sont complets : au réservoir
+    if(this.resLen + Hs > this.cap){                     // on tasse : ce qui est lu ne sert plus
+      const dec = Math.floor(this.resPos);
+      for(let c=0;c<this.nc;c++) this.res[c].copyWithin(0, dec, this.resLen);
+      this.resLen -= dec; this.resPos -= dec;
+    }
+    for(let c=0;c<this.nc;c++){
+      const dst = this.acc[c], r = this.res[c], base = this.resLen;
+      for(let i=0;i<Hs;i++){ const w = this.accW[i]; r[base+i] = w > 1e-6 ? dst[i]/w : 0; }
+      dst.copyWithin(0, Hs); dst.fill(0, N - Hs);
+    }
+    this.accW.copyWithin(0, Hs); this.accW.fill(0, N - Hs);
+    this.resLen += Hs;
+    this.premier = false; this.posA += this.Ha;
+    return true;
+  }
+  tirer(outs, nb){
+    const r = this.r;
+    for(let i=0;i<nb;i++){
+      while(this.resLen - this.resPos < r + 2 && !this.fini) this.trame();
+      const p = this.resPos, i0 = Math.floor(p), t = p - i0;
+      if(i0 + 1 >= this.resLen){                         // plus rien : fin du morceau
+        for(let c=0;c<this.nc;c++) outs[c][i] = 0;
+        if(this.fini) this.termine = true;
+        continue;
+      }
+      for(let c=0;c<this.nc;c++){ const q = this.res[c]; outs[c][i] = q[i0]*(1-t) + q[i0+1]*t; }
+      this.resPos += r;
+      this.avance += r/this.alpha;
+    }
+  }
+  position(){
+    const a = this.boucle && this.n > 0 ? this.avance % this.n : Math.min(this.n, this.avance);
+    return this.d0 + a;
+  }
+}
+let moteur = null, noeudDirect = null, silenceDirect = null;
+// alpha et r à partir des curseurs. Mode bande (garde la tonalité éteint) : la hauteur suit la vitesse.
+function reglagesDirect(){
+  const s = parseFloat($('#vitesse').value), demi = parseInt($('#hauteur').value, 10);
+  const garde = $('#tonalite').classList.contains('on');
+  const r = Math.pow(2, (demi + (garde ? 0 : 12*Math.log2(s)))/12);
+  return {s, demi, garde, r, alpha: r/s};
+}
+function appliquerDirect(){ if(moteur){ const g = reglagesDirect(); moteur.regler(g.alpha, g.r); } }
+function arreterDirect(){
+  if(noeudDirect){ noeudDirect.onaudioprocess = null; try{ noeudDirect.disconnect(); }catch(e){} noeudDirect = null; }
+  if(silenceDirect){ try{ silenceDirect.stop(); }catch(e){} try{ silenceDirect.disconnect(); }catch(e){} silenceDirect = null; }
+  moteur = null;
+}
+
+const MAX_TRAITEMENT = 40;   // secondes : limite de l'étirement HORS LIGNE (export) ; la lecture, elle, n'a plus de limite
 let bufTraite = null, zoneTraitee = null;
 
 function reglagesNeutres(){
@@ -3068,21 +3216,27 @@ document.getElementById('tonalite').addEventListener('click', e => {
   const g = e.target.classList.contains('on');
   e.target.textContent = g ? 'garde la tonalité' : 'à la bande';
   if(typeof preparerTraitement === 'function') preparerTraitement();
+  if(typeof appliquerDirect === 'function') appliquerDirect();
 });
 
 async function preparerTraitement(){
+  // La lecture n'a plus besoin de rien préparer (MoteurDirect). On affiche juste l'état.
   bufTraite = null; zoneTraitee = null;
   const e = $('#etatTraitement');
   if(!buffer || reglagesNeutres()){ e.textContent = ''; majMemoire(); return; }
-  const z = zoneLecture();
+  const g = reglagesDirect();
+  e.textContent = `× ${g.s.toFixed(2)} · ${g.demi>0?'+':''}${g.demi} demi-ton${Math.abs(g.demi)>1?'s':''}` + (g.garde ? '' : ' · bande') + ' · en direct sur tout le morceau';
+  e.className = 'etat ok';
+}
+/// Étirement HORS LIGNE d'une zone (export « exactement ce qu'on entend »). Limité à MAX_TRAITEMENT s.
+async function traiterHorsLigne(d0, d1){
+  if(!buffer || reglagesNeutres()) return false;
+  const z = {d: d0, f: d1};
   const duree = (z.f - z.d)/buffer.sampleRate;
+  const e = $('#etatTraitement');
   if(duree > MAX_TRAITEMENT){
-    const garde0 = $('#tonalite').classList.contains('on');
-    e.textContent = garde0
-      ? `garde la tonalité : seulement sur une boucle de moins de ${MAX_TRAITEMENT} s (ici ${duree.toFixed(0)} s), la vitesse joue à la bande`
-      : `hauteur : seulement sur une boucle de moins de ${MAX_TRAITEMENT} s (ici ${duree.toFixed(0)} s)`;
-    e.className = 'etat mal';
-    return;
+    e.textContent = `export avec vitesse/hauteur : au plus ${MAX_TRAITEMENT} s d'un coup (ici ${duree.toFixed(0)} s)`; e.className = 'etat mal';
+    return false;
   }
   e.textContent = 'traitement…'; e.className = 'etat';
   await new Promise(r => setTimeout(r, 15));
@@ -3108,6 +3262,7 @@ async function preparerTraitement(){
     + (garde ? '' : ` · bande (${demiTotal>0?'+':''}${demiTotal.toFixed(1)} au total)`)
     + ` · prêt (${Math.round(performance.now()-t0)} ms)`;
   e.className = 'etat ok';
+  return true;
 }
 
 /* ---------- découpe aux transitoires ----------
@@ -3546,8 +3701,8 @@ async function exporterVers(vers){
   const d1 = Math.max(d0+1, Math.min(aSel ? sel.fin : vue.fin, buffer.length));
   const e = $('#etatExport');
   e.textContent = 'écriture…'; e.className='etat';
-  const traite = bufTraite && zoneTraitee && Math.round(zoneTraitee.d) === Math.round(sel.debut)
-                 && Math.round(zoneTraitee.f) === Math.round(sel.fin);
+  if(!reglagesNeutres()) await traiterHorsLigne(d0, d1);
+  const traite = bufTraite && zoneTraitee && Math.round(zoneTraitee.d) === d0 && Math.round(zoneTraitee.f) === d1;
   let aEncoder = buffer, e0 = d0, e1 = d1;
   if(traite){
     // Le fichier doit être EXACTEMENT ce qu'on entend. L'étirement est déjà dans
@@ -3624,13 +3779,23 @@ $('#zoomSel').addEventListener('click', ()=>{ if(!buffer||sel.fin<=sel.debut)ret
   vue={debut:Math.max(0,sel.debut-m), fin:Math.min(buffer.length,sel.fin+m)}; redessiner(); });
 $('#vitesse').addEventListener('input', e => {
   $('#vVitesse').textContent = parseFloat(e.target.value).toFixed(2)+' ×';
+  appliquerDirect();
 });
-$('#vitesse').addEventListener('change', async () => { await preparerTraitement(); if(enLecture) jouer(); });
+// Relâché : si le moteur tourne déjà, tout est appliqué. Sinon (passage neutre ⇄ direct) on
+// repart de la position ACTUELLE, pas du début de la zone.
+async function reglageChange(){
+  await preparerTraitement();
+  if(!enLecture) return;
+  if(moteur && !reglagesNeutres()) return;
+  curseur = positionCourante(); jouer();
+}
+$('#vitesse').addEventListener('change', reglageChange);
 $('#hauteur').addEventListener('input', e => {
   const n = parseInt(e.target.value,10);
   $('#vHauteur').textContent = (n>0?'+':'') + n + ' demi-ton' + (Math.abs(n)>1?'s':'');
+  appliquerDirect();
 });
-$('#hauteur').addEventListener('change', async () => { await preparerTraitement(); if(enLecture) jouer(); });
+$('#hauteur').addEventListener('change', reglageChange);
 $('#ecouteDefil').addEventListener('click', e => e.target.classList.toggle('on'));
 $('#suivreTete').addEventListener('click', e => e.target.classList.toggle('on'));
 function basculerPleinEcran(force){
@@ -4889,6 +5054,7 @@ async function sonSelectionne(){
   const aSel = sel.fin - sel.debut > 1;
   const d0 = aSel ? Math.round(sel.debut) : Math.round(vue.debut);
   const d1 = aSel ? Math.round(sel.fin)   : Math.round(vue.fin);
+  if(!reglagesNeutres()) await traiterHorsLigne(d0, d1);
   const traite = bufTraite && zoneTraitee &&
                  Math.round(zoneTraitee.d) === d0 && Math.round(zoneTraitee.f) === d1;
   if(traite){
