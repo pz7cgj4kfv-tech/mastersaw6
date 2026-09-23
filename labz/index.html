@@ -8526,6 +8526,12 @@ function grilleFermer(){
     'body.tel #panneauTransport .rangee:has(#jouer),body.tel #panneauTransport div:has(> #jouer){display:none!important}',   /* un seul transport : celui du bas */
     'body.tel[data-ecran="jouer"] #multiRangee,body.tel[data-ecran="jouer"] #multiGuideTexte,body.tel[data-ecran="jouer"] #multiListe{display:none!important}',
     'body.tel[data-ecran="instrument"] #panneauInstrument > .rangee:not(#multiRangee),body.tel[data-ecran="instrument"] #instClavier{display:none!important}',
+    /* Jouer = le clavier D'ABORD, visible sans défiler (constaté au simulateur 23.09 : il était sous neuf curseurs,
+       « le piano ne fonctionne plus » = introuvable). Les réglages passent dessous. */
+    'body.tel[data-ecran="jouer"] #panneauInstrument.montre{display:flex!important;flex-direction:column}',
+    'body.tel[data-ecran="jouer"] #instClavier{order:-2;height:170px;margin:4px 0 12px;flex:none}',
+    'body.tel[data-ecran="jouer"] #instClavier .touche.blanche{font-size:11px}',
+    'body.tel[data-ecran="jouer"] #panneauInstrument > .rangee:has(#instSelection){order:-1}',
     /* charte David (23.09) : lisible, ombre légère, état pressé, un seul ambre pour l'action principale */
     'body.tel button{box-shadow:0 1px 2px rgba(31,29,26,.18),0 2px 6px rgba(31,29,26,.08);border-radius:11px}',
     'body.tel button:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(31,29,26,.18)}',
