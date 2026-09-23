@@ -618,9 +618,9 @@
   </div>
 </div>
 <script>(function(){var G=document.getElementById('pwgate');
-  try{if(sessionStorage.getItem('msaw6_ok')==='1'){G.remove();return;}}catch(e){}
+  try{if((localStorage.getItem('msaw6_ok')==='1'||sessionStorage.getItem('msaw6_ok')==='1'||!!window.Capacitor||location.protocol==='capacitor:'||(location.hostname==='localhost'&&!location.port&&location.protocol!=='http:'))){G.remove();return;}}catch(e){}
   var IN=document.getElementById('pwin'),GO=document.getElementById('pwgo'),ER=document.getElementById('pwerr');
-  function check(){if((IN.value||'').trim().toLowerCase()==='saw6'){try{sessionStorage.setItem('msaw6_ok','1');}catch(e){}G.remove();}else{ER.style.display='block';IN.value='';IN.focus();}}
+  function check(){if((IN.value||'').trim().toLowerCase()==='saw6'){try{localStorage.setItem('msaw6_ok','1');}catch(e){}G.remove();}else{ER.style.display='block';IN.value='';IN.focus();}}
   GO.onclick=check;IN.addEventListener('keydown',function(e){if(e.key==='Enter')check();});setTimeout(function(){try{IN.focus();}catch(e){}},100);})();</script>
 <div class="app">
   <header class="screws">
