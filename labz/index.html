@@ -6624,6 +6624,9 @@ const ECRANS = [
   {id:'decouper', nom:'Découper', panneaux:['panneauOnde','panneauTransport','panneauDecoupe']},
   {id:'rythme',   nom:'Rythme',   panneaux:['panneauRythme']},
   {id:'jouer',    nom:'Jouer',    panneaux:['panneauInstrument','panneauOnde']},
+  // les deux suivants n'existent que sur TÉLÉPHONE (onglets du bas, maquette validée par David le 23.09)
+  {id:'onde',       nom:'Onde',       tel:true, panneaux:['panneauOnde','panneauTransport','panneauDecoupe']},
+  {id:'instrument', nom:'Instrument', tel:true, panneaux:['panneauInstrument']},
   {id:'labo',     nom:'Labo',     panneaux:['panneauLabo']},
   {id:'effets',   nom:'Effets',   panneaux:['panneauEffets']},
   {id:'voir',     nom:'Voir',     panneaux:['panneauSpectre','panneauStereo']},
@@ -6658,6 +6661,9 @@ function montrerEcran(id){
   if(b) b.classList.add('montre');
   document.querySelectorAll('#barreEcrans button').forEach(x =>
     x.classList.toggle('on', x.dataset.e === e.id));
+  document.body.dataset.ecran = e.id;   // le CSS téléphone s'en sert (transport visible sur Onde/Jouer, etc.)
+  document.querySelectorAll('#ongletsTel button').forEach(x =>
+    x.classList.toggle('on', x.dataset.e === e.id));
   window.scrollTo(0, 0);
   redessinerTout();
 }
@@ -6665,6 +6671,7 @@ function montrerEcran(id){
 (function(){
   const b = document.getElementById('barreEcrans');
   for(const e of ECRANS){
+    if(e.tel) continue;   // onglets téléphone : pas dans la barre du bureau
     const x = document.createElement('button');
     x.textContent = e.nom; x.dataset.e = e.id;
     x.addEventListener('click', () => montrerEcran(e.id));
@@ -8317,6 +8324,73 @@ function grilleFermer(){
     + '<button class="tel-t tel-grille" id="telGrille" title="Les modes">▦</button>';
   document.body.appendChild(barre);
 
+  /* ===== TÉLÉPHONE, structure validée par David le 23.09 (maquette) : 4 onglets en bas
+     (Source · Onde · Jouer · Instrument) + Plus (les autres modes), ZÉRO défilement de page,
+     l'onde prend l'écran, UN SEUL transport (celui du bas, visible sur Onde et Jouer), et les
+     outils de découpe montent en TIROIR. Le bureau n'est pas touché : tout est sous body.tel. ===== */
+  const ONGLETS = [['source','Source','▤'], ['onde','Onde','∿'], ['jouer','Jouer','♪'], ['instrument','Instrument','⌗'], ['plus','Plus','▦']];
+  const ong = document.createElement('div'); ong.id = 'ongletsTel';
+  for(const [id, nom, ic] of ONGLETS){
+    const b = document.createElement('button'); b.dataset.e = id; b.innerHTML = '<b>' + ic + '</b>' + nom;
+    b.addEventListener('click', () => { if(id === 'plus') grilleOuvrir(); else { document.body.classList.remove('tiroirOuvert'); montrerEcran(id); } });
+    ong.appendChild(b);
+  }
+  document.body.appendChild(ong);
+  // le tiroir de découpe sous l'onde : une rangée toujours visible, « ⋯ » tire le reste
+  const po = document.getElementById('panneauOnde');
+  if(po){
+    const t = document.createElement('div'); t.id = 'tiroirTel';
+    t.innerHTML = '<button data-cible="decouper">✂ Découper</button><button data-cible="tout">Tout</button>'
+                + '<button data-cible="zoomSel">Zoom sél.</button><button data-cible="selVide">Effacer</button>'
+                + '<button id="tiroirPlus" title="Tous les réglages de lecture et de découpe">⋯</button>';
+    t.querySelectorAll('button[data-cible]').forEach(b => b.addEventListener('click', () => { const c = document.getElementById(b.dataset.cible); if(c) c.click(); }));
+    t.querySelector('#tiroirPlus').addEventListener('click', () => { document.body.classList.toggle('tiroirOuvert'); setTimeout(() => { try{ redessiner(); }catch(e){} }, 60); });
+    po.appendChild(t);
+  }
+  // le ← Studio quitte la façade (cachée sur téléphone) pour l'écran Source
+  const retour = document.querySelector('.facade a[href="../index.html"], .facade a[href="../v4/"]');
+  const ps = document.getElementById('panneauSource');
+  if(retour && ps){ retour.style.marginBottom = '10px'; ps.insertBefore(retour, ps.firstChild); }
+  const st = document.createElement('style'); st.id = 'styleTel';
+  st.textContent = [
+    '#ongletsTel,#tiroirTel{display:none}',
+    'body.tel{overflow:hidden;height:100dvh;box-sizing:border-box;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px}',
+    'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
+    'body.tel.uneFonction{display:flex;flex-direction:column}',
+    'body.tel .facade{display:none!important}',
+    'body.tel .panneau.montre{overflow:auto;min-height:0;-webkit-overflow-scrolling:touch;margin:0 8px}',
+    'body.tel #panneauOnde.montre{flex:1;display:flex!important;flex-direction:column;overflow:hidden;padding:6px 8px 4px}',   /* !important : « uneFonction » impose block */
+    'body.tel #panneauOnde.montre #boite-vue{flex:1;display:flex;flex-direction:column;min-height:0}',
+    'body.tel #panneauOnde.montre #vue{flex:1;height:auto!important;min-height:120px}',
+    'body.tel #panneauOnde.montre #apercu{height:40px}',
+    'body.tel[data-ecran="jouer"] #panneauOnde{display:none!important}',
+    'body.tel #panneauTransport.montre,body.tel #panneauDecoupe.montre{display:none!important}',
+    'body.tel.tiroirOuvert #panneauTransport.montre,body.tel.tiroirOuvert #panneauDecoupe.montre{display:block!important;flex:1 1 0;min-height:0;overflow:auto}',
+    'body.tel.tiroirOuvert #panneauOnde.montre{flex:0 0 32vh;min-height:0}',
+    'body.tel #tiroirTel{display:flex;gap:6px;padding:8px 0 0;flex:none}',
+    'body.tel #tiroirTel button{flex:1;min-width:0;min-height:42px;padding:0 6px;font-size:12px;letter-spacing:0;text-transform:none}',
+    'body.tel #tiroirTel button::before{display:none}',
+    'body.tel #tiroirTel #tiroirPlus{flex:0 0 44px;font-size:18px}',
+    'body.tel.tiroirOuvert #tiroirTel #tiroirPlus{background:#f0a63a;color:#2a1a03}',
+    'body.tel #ongletsTel{position:fixed;left:0;right:0;bottom:0;z-index:71;display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px));background:#fbfaf7;border-top:1px solid #d9d4c8}',
+    'body.tel #ongletsTel button{min-height:50px;border-radius:12px;font-size:10.5px;font-weight:700;display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;padding:0;background:transparent;box-shadow:none;border:none;color:#6e6a62;letter-spacing:0;text-transform:none}',
+    'body.tel #ongletsTel button::before{display:none}',
+    'body.tel #ongletsTel button b{font-size:17px;line-height:1;font-weight:400}',
+    'body.tel #ongletsTel button.on{background:#f0a63a;color:#2a1a03;box-shadow:0 1px 2px rgba(0,0,0,.18)}',
+    'body.tel #barreTel{display:none;bottom:calc(64px + env(safe-area-inset-bottom,0px));padding-bottom:6px}',
+    'body.tel[data-ecran="onde"] #barreTel,body.tel[data-ecran="jouer"] #barreTel{display:flex}',
+    'body.tel #telGrille{display:none}',
+    'body.tel #panneauTransport .rangee:has(#jouer),body.tel #panneauTransport div:has(> #jouer){display:none!important}',   /* un seul transport : celui du bas */
+    'body.tel[data-ecran="jouer"] #multiRangee,body.tel[data-ecran="jouer"] #multiGuideTexte,body.tel[data-ecran="jouer"] #multiListe{display:none!important}',
+    'body.tel[data-ecran="instrument"] #panneauInstrument > .rangee:not(#multiRangee),body.tel[data-ecran="instrument"] #instClavier{display:none!important}',
+    /* charte David (23.09) : lisible, ombre légère, état pressé, un seul ambre pour l'action principale */
+    'body.tel button{box-shadow:0 1px 2px rgba(31,29,26,.18),0 2px 6px rgba(31,29,26,.08);border-radius:11px}',
+    'body.tel button:active{transform:translateY(1px);box-shadow:inset 0 2px 4px rgba(31,29,26,.18)}',
+    'body.tel select{background:#fbfaf7;color:#1f1d1a;border:1px solid #d9d4c8;border-radius:10px;min-height:42px}',
+    'body.tel .primaire{background:#f0a63a!important;color:#2a1a03!important;border-color:#d9922d!important}'
+  ].join('\n');
+  document.head.appendChild(st);
+
   // la grille plein écran
   const g = document.createElement('div');
   g.id = 'grilleEcrans'; g.hidden = true;
@@ -8329,6 +8403,7 @@ function grilleFermer(){
                   jouer:'♪', labo:'⚛', effets:'≈', voir:'◎', analyse:'𝄞',
                   maquette:'▤', latence:'⏱'};
   for(const e of ECRANS){
+    if(e.tel) continue;   // déjà dans les onglets du bas
     const t = document.createElement('button');
     t.className = 'grille-tuile'; t.dataset.e = e.id;
     t.innerHTML = '<b>' + (ICONES[e.id] || '•') + '</b><span>' + e.nom + '</span>';
@@ -8381,7 +8456,11 @@ function grilleFermer(){
 })();
 
 laboDessiner();
-try{ montrerEcran(localStorage.getItem('ecran') || 'tout'); }catch(e){ montrerEcran('tout'); }
+try{
+  const memo = localStorage.getItem('ecran');
+  const tel = document.body.classList.contains('tel'), onglets = ['source','onde','jouer','instrument'];
+  montrerEcran(tel ? (onglets.includes(memo) ? memo : 'source') : (memo || 'tout'));   // téléphone : on démarre sur un onglet
+}catch(e){ montrerEcran('tout'); }
 
 ryDessiner();
 (async function(){
