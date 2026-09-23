@@ -2316,7 +2316,9 @@ async function listerFichiers(){
   if(!serveurOK){
     // sans Mac : la liste, ce sont les fichiers importés sur cet appareil
     const sl = $('#fichier'); sl.innerHTML = ''; groupes = new Set();
-    if(!LOCAL.size){ sl.innerHTML = '<option value="">importe un fichier audio</option>'; return; }
+    // rien d'importé : pas de menu à moitié vide à côté du bouton (retour David 23.09), juste « Importer »
+    sl.hidden = !LOCAL.size;
+    if(!LOCAL.size) return;
     for(const nom of LOCAL.keys()){ const o = document.createElement('option'); o.value = nom; o.textContent = nom; sl.appendChild(o); }
     return;
   }
@@ -3685,8 +3687,11 @@ function appliquerAutonome(){
     b.textContent = b.textContent.trim() + ' (Mac)';   // visible au doigt, pas seulement au survol
   }
   const p = document.getElementById('projet'); if(p){ p.disabled = true; p.title = 'nécessite le Mac'; }
+  // « Rafraîchir » relit la liste du Mac : sans Mac il ne sert à rien (question David 23.09) → caché
+  const rc = document.getElementById('recharger'); if(rc) rc.hidden = true;
+  const im = document.getElementById('importer'); if(im) im.classList.add('primaire');   // l'action principale de Source
   // le sélecteur iOS ouvrait la Photothèque à cause de video/* : audio seul sur l'appareil
-  const fi = document.getElementById('fichierEntree'); if(fi) fi.accept = 'audio/*';   // les extensions .m4a/.mp3 réveillent Photos/Vidéo sur iOS
+  const fi = document.getElementById('fichierEntree'); if(fi) fi.accept = 'audio/*,audio/mpeg,audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mp4,audio/x-m4a,audio/flac,audio/aac,audio/ogg,.wav,.aif,.aiff,.mp3,.m4a,.flac,.aac,.caf,.ogg';   // tout l'audio, SANS vidéo (video/* ouvrait Photos ; audio/* seul grisait les fichiers)
   const e = document.getElementById('infos');
   if(e && !e.textContent.trim()){ e.textContent = 'mode autonome : les fichiers restent sur cet appareil'; e.className = 'etat'; }
 }
@@ -3727,7 +3732,7 @@ if(DANS_APP){
     + 'body.app .panneau,body.app .facade{max-width:100%;box-sizing:border-box}';
   document.head.appendChild(st);
 }
-if(DANS_APP || /iPhone|iPad/.test(navigator.userAgent)){ const fi = document.getElementById('fichierEntree'); if(fi) fi.accept = 'audio/*'; }
+if(DANS_APP || /iPhone|iPad/.test(navigator.userAgent)){ const fi = document.getElementById('fichierEntree'); if(fi) fi.accept = 'audio/*,audio/mpeg,audio/wav,audio/x-wav,audio/aiff,audio/x-aiff,audio/mp4,audio/x-m4a,audio/flac,audio/aac,audio/ogg,.wav,.aif,.aiff,.mp3,.m4a,.flac,.aac,.caf,.ogg'; }
 
 /* ---------- un seul Mémo à la fois ----------
    Chaque ouverture créait un onglet de plus, et les anciens continuaient de boucler dans
@@ -8354,7 +8359,10 @@ function grilleFermer(){
   const st = document.createElement('style'); st.id = 'styleTel';
   st.textContent = [
     '#ongletsTel,#tiroirTel{display:none}',
-    'body.tel{overflow:hidden;height:100dvh;box-sizing:border-box;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px}',
+    /* iOS fait défiler le DOCUMENT, pas le body : un overflow:hidden sur body ne suffit pas (vu par David, 23.09 13:18).
+       Le body devient fixe et exactement égal à l'écran ; seuls les panneaux défilent, à l'intérieur. */
+    'html:has(body.tel){overflow:hidden;height:100%;overscroll-behavior:none}',
+    'body.tel{position:fixed;inset:0;margin:0;overflow:hidden;box-sizing:border-box;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px;overscroll-behavior:none}',
     'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
     'body.tel.uneFonction{display:flex;flex-direction:column}',
     'body.tel .facade{display:none!important}',
