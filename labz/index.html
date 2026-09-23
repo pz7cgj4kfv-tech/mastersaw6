@@ -2003,9 +2003,18 @@ function videPistes(msg){
 
 async function chargerPistes(morceau){
   pistes = [];
-  if(serveurOK === false) return false;   // sans Mac : pas de pistes séparées, et surtout pas de fetch qui plante
-  const r = await fetch('/api/pistes?f=' + encodeURIComponent(morceau));
-  const noms = await r.json();
+  const dossier = nomJoli(morceau) + ' (pistes)';
+  let noms, local = false;
+  if(serveurOK === false){
+    // sans Mac : les pistes importées ensemble sur l'appareil (« Nom (pistes)/basse.wav »)
+    noms = [...LOCAL.keys()].filter(k => k.startsWith(dossier + '/')).map(k => k.slice(dossier.length + 1));
+    if(!noms.length) return false;
+    local = true;
+    try{ localStorage.setItem('labz-dernier', morceau); }catch(e){}
+  }else{
+    const r = await fetch('/api/pistes?f=' + encodeURIComponent(morceau));
+    noms = await r.json();
+  }
   $('#panneauPistes').hidden = false;
   $('#listePistes').innerHTML = '';
   if(!noms.length){
@@ -2016,10 +2025,11 @@ async function chargerPistes(morceau){
   }
   $('#toutesPistes').hidden = false;
   $('#etatPistes').textContent = 'lecture des pistes…'; $('#etatPistes').className = 'etat';
-  const dossier = nomJoli(morceau) + ' (pistes)';
   for(const n of noms){
-    const rr = await fetch('/audio/' + encodeURIComponent(dossier) + '/' + encodeURIComponent(n));
-    const ab = await rr.arrayBuffer();
+    let ab;
+    if(local) ab = LOCAL.get(dossier + '/' + n).slice(0);   // copie : decodeAudioData détache le buffer
+    else{ const rr = await fetch('/audio/' + encodeURIComponent(dossier) + '/' + encodeURIComponent(n)); ab = await rr.arrayBuffer(); }
+    $('#infos').textContent = 'lecture de ' + n + '…';
     const b = await audio().decodeAudioData(ab);
     const st = mesurerPiste(b);
     const tb = timbreDe(b);
@@ -2326,8 +2336,13 @@ async function listerFichiers(){
     // rien d'importé : pas de menu à moitié vide à côté du bouton (retour David 23.09), juste « Importer »
     sl.hidden = !LOCAL.size;
     if(!LOCAL.size) return;
-    for(const nom of LOCAL.keys()){ const o = document.createElement('option'); o.value = nom; o.textContent = nom; sl.appendChild(o); }
-    try{ const d = localStorage.getItem('labz-dernier'); if(d && LOCAL.has(d)) sl.value = d; }catch(e){}   // on rouvre le dernier fichier
+    for(const nom of LOCAL.keys()){
+      const g = nom.match(/^(.+) \(pistes\)\/[^/]+$/);
+      if(g){ if(groupes.has(g[1])) continue; groupes.add(g[1]);
+             const o = document.createElement('option'); o.value = g[1]; o.textContent = '▦ ' + g[1] + ' (pistes)'; sl.appendChild(o); continue; }
+      const o = document.createElement('option'); o.value = nom; o.textContent = nom; sl.appendChild(o);
+    }
+    try{ const d = localStorage.getItem('labz-dernier'); if(d && (LOCAL.has(d) || groupes.has(d))) sl.value = d; }catch(e){}   // on rouvre le dernier
     return;
   }
   const r = await fetch('/api/fichiers');
@@ -2385,7 +2400,9 @@ async function charger(nom){
     }
     bufSource = await audio().decodeAudioData(ab);
   }catch(x){
-    $('#infos').textContent = 'impossible de lire « ' + nom + ' » : format non pris en charge ou fichier trop lourd';
+    const ab0 = LOCAL.get(nom);
+    const mo = ab0 ? (ab0.byteLength/1048576).toFixed(1) + ' Mo' : 'absent de cet appareil';
+    $('#infos').textContent = 'impossible de lire « ' + nom + ' » (' + mo + ') : ' + ((x && x.message) || x) + (ab0 && ab0.byteLength > 80*1048576 ? ' · trop lourd pour le téléphone ? exporte-le en MP3 depuis le Mac' : '');
     $('#infos').className = 'etat mal';
     return;
   }
@@ -3963,10 +3980,12 @@ async function envoyerFichier(f, dossier){
     // l'autre (IndexedDB) : « quand je relance l'app, il doit garder ce que je fais » (David 23.09)
     e.textContent = 'lecture de ' + f.name + '…'; e.className = 'etat';
     const ab = await f.arrayBuffer();
-    LOCAL.set(f.name, ab);
-    BDD.garder(f.name, ab);
+    if(!ab.byteLength){ e.textContent = f.name + ' est vide : pas encore téléchargé depuis iCloud ? ouvre-le d\'abord dans Fichiers'; e.className = 'etat mal'; return null; }
+    const cle = dossier ? dossier + '/' + f.name : f.name;   // pistes d'un morceau : « Nom (pistes)/basse.wav »
+    LOCAL.set(cle, ab);
+    BDD.garder(cle, ab);
     e.textContent = f.name + ' · sur cet appareil'; e.className = 'etat ok';
-    return f.name;
+    return cle;
   }
   e.textContent = 'envoi de ' + f.name + '…'; e.className = 'etat';
   const ab = await f.arrayBuffer();
