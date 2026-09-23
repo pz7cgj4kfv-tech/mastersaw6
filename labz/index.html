@@ -1984,6 +1984,7 @@ function videPistes(msg){
 
 async function chargerPistes(morceau){
   pistes = [];
+  if(serveurOK === false) return false;   // sans Mac : pas de pistes séparées, et surtout pas de fetch qui plante
   const r = await fetch('/api/pistes?f=' + encodeURIComponent(morceau));
   const noms = await r.json();
   $('#panneauPistes').hidden = false;
@@ -2379,7 +2380,8 @@ async function charger(nom){
   premiereBoucleNotee = false;
   bufOriginal = buffer;
   appliquerStereo();
-  if(await chargerPistes(nom)) await melanger();
+  // Bug du 23.09 : ce fetch vers le Mac plantait APRÈS un décodage réussi et s'affichait « import raté »
+  if(serveurOK && await chargerPistes(nom)) await melanger();
 }
 
 /* ---------- lecture ---------- */
@@ -3406,6 +3408,7 @@ function provenance(d0, d1){
 }
 
 function noter(quoi, extra){
+  if(serveurOK === false) return;   // le journal vit sur le Mac
   try{
     fetch('/api/journal', {method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify(Object.assign({evenement:quoi, morceau:$('#fichier').value}, extra||{}))});
@@ -3586,13 +3589,14 @@ const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'exporter
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
     const st = document.createElement('style'); st.id = 'styleAutonome';
-    st.textContent = 'button.necessiteMac{opacity:.4}button.necessiteMac::after{content:" · Mac";font-size:10px}'
+    st.textContent = 'button.necessiteMac{opacity:.45}'
                    + 'body.autonome #telBouton,body.autonome #bandeauMain{display:none!important}';
     document.head.appendChild(st);
   }
   for(const id of NECESSITE_MAC){
-    const b = document.getElementById(id); if(!b) continue;
+    const b = document.getElementById(id); if(!b || b.classList.contains('necessiteMac')) continue;
     b.disabled = true; b.title = 'nécessite le Mac'; b.classList.add('necessiteMac');
+    b.textContent = b.textContent.trim() + ' (Mac)';   // visible au doigt, pas seulement au survol
   }
   const p = document.getElementById('projet'); if(p){ p.disabled = true; p.title = 'nécessite le Mac'; }
   // le sélecteur iOS ouvrait la Photothèque à cause de video/* : audio seul sur l'appareil
@@ -3615,6 +3619,14 @@ function partagerWav(ab, nom, e){
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
   document.body.appendChild(a); a.click(); a.remove();
   if(e){ e.textContent = '✓ ' + nom; e.className = 'etat ok'; }
+}
+// Dans l'app (pas de bouton « retour » de navigateur), un chemin pour revenir au menu Studio / à Master.
+if(DANS_APP){
+  const r = document.createElement('a'); r.href = '../index.html'; r.textContent = '← Studio';
+  r.style.cssText = 'position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9000;'
+    + 'font:700 13px system-ui,sans-serif;color:#23211d;background:#fbfaf7;border:1px solid #d3d8da;'
+    + 'border-radius:9px;padding:7px 11px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.15)';
+  document.body.appendChild(r);
 }
 
 /* ---------- un seul Mémo à la fois ----------

@@ -1824,6 +1824,11 @@ function esc(s){return(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':
 let tT;function toast(m,ms){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),ms||2200);} /* ms optionnel (le Δ snapshots passait 5000 dans le vide) */
 /* (l'ancien 2e handler clavier vivait ici — fusionné dans le handler unique plus haut) */
 
+/* Dans l'app Studio (Capacitor) : un chemin pour revenir au menu (Master ↔ Transient Labz). */
+(function(){const inApp=!!window.Capacitor||location.protocol==='capacitor:';if(!inApp)return;
+  const r=document.createElement('a');r.href='../index.html';r.textContent='← Studio';
+  r.style.cssText='position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9000;font:700 12px system-ui,sans-serif;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 10px;text-decoration:none;box-shadow:var(--bevel)';
+  document.body.appendChild(r);})();
 /* ===================== SPLASH / INTRO COSMIQUE ===================== */
 (function(){const sp=$('#splash'),cv=$('#splashCanvas');if(!sp||!cv)return;const ctx=cv.getContext('2d');let raf,t0=null;
   function size(){const dpr=devicePixelRatio||1;cv.width=innerWidth*dpr;cv.height=innerHeight*dpr;ctx.setTransform(dpr,0,0,dpr,0,0);}
