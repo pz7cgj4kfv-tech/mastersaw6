@@ -1289,6 +1289,7 @@ body.tel .modele{ font-size:8.5px }
     <button id="toutesPistes" class="primaire">Tout écouter</button>
     <button id="eclaterBatterie" hidden>Éclater la batterie</button>
     <button id="exporterPistes">Exporter les pistes</button>
+    <button id="pistesIphone" title="Copie les pistes dans iCloud Drive › Transient Labz : elles apparaissent dans Fichiers sur l'iPhone">→ iPhone (Fichiers)</button>
     <span id="etatPistes" class="etat"></span>
   </div>
   <div class="tranches" id="listePistes"></div>
@@ -2202,16 +2203,20 @@ $('#eclaterBatterie').addEventListener('click', async () => {
     }
   }, 700);
 });
-$('#exporterPistes').addEventListener('click', async () => {
+async function exporterPistesVers(vers){
   const e = $('#etatPistes');
   e.textContent = 'copie…'; e.className = 'etat';
-  const r = await fetch('/api/exporter-pistes?f=' + encodeURIComponent($('#fichier').value));
+  const r = await fetch('/api/exporter-pistes?f=' + encodeURIComponent($('#fichier').value) + '&vers=' + vers);
   const j = await r.json();
   if(j.erreur){ e.textContent = j.erreur; e.className = 'etat mal'; return; }
-  e.textContent = `✓ ${j.fichiers.length} pistes dans ${j.dossier.split('/').slice(-2).join('/')}`;
+  e.textContent = vers === 'iphone'
+    ? `✓ ${j.fichiers.length} pistes dans iCloud Drive › Transient Labz › ${j.dossier.split('/').pop()} · sur l'iPhone : Labz › Source › Importer › Fichiers (le temps qu'iCloud les monte)`
+    : `✓ ${j.fichiers.length} pistes dans ${j.dossier.split('/').slice(-2).join('/')}`;
   e.className = 'etat ok';
-  noter('export pistes', {nombre: j.fichiers.length});
-});
+  noter('export pistes', {nombre: j.fichiers.length, vers});
+}
+$('#exporterPistes').addEventListener('click', () => exporterPistesVers('ableton'));
+$('#pistesIphone').addEventListener('click', () => exporterPistesVers('iphone'));
 $('#toutesPistes').addEventListener('click', async () => {
   pistes.forEach(p => p.actif = true);
   dessinerPistes();
@@ -3736,7 +3741,7 @@ async function sonderServeur(){
   }
   return serveurOK;
 }
-const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'exporterTranches',
+const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'pistesIphone', 'exporterTranches',
                        'enregistrer', 'versAbleton'];   // projets : désormais gardés sur l'appareil, plus « (Mac) »
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
