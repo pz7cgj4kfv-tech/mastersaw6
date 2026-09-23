@@ -1494,6 +1494,7 @@ body.tel .modele{ font-size:8.5px }
     </select>
     <button id="multiGuide">Quoi jouer ?</button>
     <button id="multiAnalyser" class="primaire">Découper et reconnaître ce son</button>
+    <button id="multiExporter" title="Un ZIP : WAV (note gravée dedans) + SFZ + Decent Sampler + mode d'emploi Ableton / Kontakt / Battery">Exporter l'instrument</button>
     <span id="multiEtat" class="etat"></span>
   </div>
   <div id="multiGuideTexte" hidden class="petit" style="margin:0 0 10px;line-height:1.55;max-width:820px"></div>
@@ -7555,6 +7556,111 @@ function multiMapper(){
   try{ montrerEcran('jouer'); }catch(x){}
 }
 $('#multiAnalyser')?.addEventListener('click', multiAnalyser);
+
+/* ---------- EXPORT DE L'INSTRUMENT (étape 5) ----------
+   Pivot choisi d'après docs/RECHERCHE_SAMPLER_BASSE_2026-09-23.md : un ZIP avec
+   - samples/*.wav 24 bits, la NOTE GRAVÉE dans le fichier (chunks « smpl » + « inst ») : c'est ce que lisent
+     Ableton Sampler et Kontakt (Auto-Map), Live ignorant les noms de fichiers ;
+   - un .sfz (sforzando, sfizz, et convertible en tout le reste par ConvertWithMoss) ;
+   - un .dspreset (Decent Sampler, gratuit, Mac/Win/iOS) ;
+   - un LISEZMOI avec les 3 recettes. Nommage : Instrument_E1_028.wav = note anglaise + numéro MIDI (tokens pour Kontakt).
+   Battery 3 : pas de format ouvert, donc « un bouton » impossible : WAV triés + sélection multiple, dit dans le LISEZMOI. */
+function nomAnglais(midi){ return ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'][((midi%12)+12)%12] + (Math.floor(midi/12) - 1); }
+function wavAvecNote(ab, midi, lo, hi){
+  // ajoute « smpl » (root note) et « inst » (root + plage de touches) après « data », et corrige la taille RIFF
+  const src = new Uint8Array(ab), pad = src.length & 1;
+  const smpl = new ArrayBuffer(8 + 36), sv = new DataView(smpl), t = (v,o,s) => { for(let i=0;i<s.length;i++) v.setUint8(o+i, s.charCodeAt(i)); };
+  t(sv, 0, 'smpl'); sv.setUint32(4, 36, true);
+  sv.setUint32(8, 0, true); sv.setUint32(12, 0, true);                       // manufacturer, product
+  sv.setUint32(16, Math.round(1e9 / new DataView(ab).getUint32(24, true)), true); // samplePeriod en ns
+  sv.setUint32(20, midi, true); sv.setUint32(24, 0, true);                    // midiUnityNote, pitchFraction
+  sv.setUint32(28, 0, true); sv.setUint32(32, 0, true);                       // smpte format / offset
+  sv.setUint32(36, 0, true); sv.setUint32(40, 0, true);                       // numLoops, samplerData
+  const inst = new ArrayBuffer(8 + 8), iv = new DataView(inst);
+  t(iv, 0, 'inst'); iv.setUint32(4, 7, true);
+  iv.setUint8(8, midi); iv.setInt8(9, 0); iv.setInt8(10, 0); iv.setUint8(11, lo); iv.setUint8(12, hi); iv.setUint8(13, 1); iv.setUint8(14, 127); iv.setUint8(15, 0);
+  const out = new Uint8Array(src.length + pad + smpl.byteLength + inst.byteLength);
+  out.set(src, 0); out.set(new Uint8Array(smpl), src.length + pad); out.set(new Uint8Array(inst), src.length + pad + smpl.byteLength);
+  new DataView(out.buffer).setUint32(4, out.length - 8, true);
+  return out;
+}
+const CRC_TABLE = (() => { const T = new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); T[n] = c >>> 0; } return T; })();
+function crc32(u8){ let c = 0xFFFFFFFF; for(let i=0;i<u8.length;i++) c = CRC_TABLE[(c ^ u8[i]) & 255] ^ (c >>> 8); return (c ^ 0xFFFFFFFF) >>> 0; }
+function zipSansCompression(entrees){
+  // ZIP « stored » (aucune compression : les WAV ne compressent pas et ça reste lisible partout)
+  const enc = new TextEncoder(), locaux = [], central = []; let offset = 0;
+  for(const e of entrees){
+    const nom = enc.encode(e.nom), data = e.data instanceof Uint8Array ? e.data : new Uint8Array(e.data), crc = crc32(data);
+    const h = new Uint8Array(30 + nom.length), hv = new DataView(h.buffer);
+    hv.setUint32(0, 0x04034b50, true); hv.setUint16(4, 20, true); hv.setUint16(6, 0x0800, true); hv.setUint16(8, 0, true);
+    hv.setUint16(10, 0, true); hv.setUint16(12, 0x21, true); hv.setUint32(14, crc, true); hv.setUint32(18, data.length, true); hv.setUint32(22, data.length, true);
+    hv.setUint16(26, nom.length, true); hv.setUint16(28, 0, true); h.set(nom, 30);
+    const c = new Uint8Array(46 + nom.length), cv = new DataView(c.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x0800, true); cv.setUint16(10, 0, true);
+    cv.setUint16(12, 0, true); cv.setUint16(14, 0x21, true); cv.setUint32(16, crc, true); cv.setUint32(20, data.length, true); cv.setUint32(24, data.length, true);
+    cv.setUint16(28, nom.length, true); cv.setUint16(30, 0, true); cv.setUint16(32, 0, true); cv.setUint16(34, 0, true); cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true); cv.setUint32(42, offset, true); c.set(nom, 46);
+    locaux.push(h, data); central.push(c); offset += h.length + data.length;
+  }
+  const tailleCentral = central.reduce((s,c) => s + c.length, 0);
+  const fin = new Uint8Array(22), fv = new DataView(fin.buffer);
+  fv.setUint32(0, 0x06054b50, true); fv.setUint16(8, entrees.length, true); fv.setUint16(10, entrees.length, true);
+  fv.setUint32(12, tailleCentral, true); fv.setUint32(16, offset, true);
+  return new Blob([...locaux, ...central, fin], {type: 'application/zip'});
+}
+function partagerBlob(blob, nom, e){
+  try{
+    const f = new File([blob], nom, {type: blob.type});
+    if(navigator.canShare && navigator.canShare({files: [f]})){
+      navigator.share({files: [f], title: nom})
+        .then(() => { if(e){ e.textContent = '✓ ' + nom + ' partagé'; e.className = 'etat ok'; } })
+        .catch(() => { if(e){ e.textContent = 'partage annulé'; e.className = 'etat'; } });
+      return;
+    }
+  }catch(x){}
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom;
+  document.body.appendChild(a); a.click(); a.remove();
+  if(e){ e.textContent = '✓ ' + nom; e.className = 'etat ok'; }
+}
+async function multiExporter(){
+  const e = $('#multiEtat');
+  if(!inst.zones || !inst.zones.length){ e.textContent = 'découpe et reconnais d’abord un son.'; e.className = 'etat mal'; return; }
+  const type = $('#multiType').value;
+  const base = (($('#nom') && $('#nom').value.trim()) || type).replace(/[^\w\-]+/g, '_').replace(/^_+|_+$/g, '') || 'Instrument';
+  e.textContent = 'écriture de l’instrument…'; e.className = 'etat';
+  await new Promise(r => setTimeout(r, 20));
+  const z = inst.zones, sr = z[0].buffer.sampleRate, entrees = [];
+  let sfz = '// ' + base + ' : ' + z.length + ' notes, fait avec Transient Labz\n<control>\ndefault_path=samples/\n<global>\nampeg_release=0.3\n<group>\n';
+  let ds = '<?xml version="1.0" encoding="UTF-8"?>\n<DecentSampler minVersion="1.0">\n  <groups>\n    <group>\n';
+  for(let i=0;i<z.length;i++){
+    const midi = z[i].midi;
+    const lo = i === 0 ? Math.max(0, midi - 12) : z[i-1].midi + 1;      // chaque zone couvre sa note et en dessous (on ne pitche pas vers le haut)
+    const hi = i === z.length - 1 ? Math.min(127, midi + 12) : midi;
+    const nomWav = base + '_' + nomAnglais(midi) + '_' + String(midi).padStart(3, '0') + '.wav';
+    entrees.push({nom: base + '/samples/' + nomWav, data: wavAvecNote(encoderWav24(z[i].buffer, 0, z[i].buffer.length), midi, lo, hi)});
+    sfz += '<region> sample=' + nomWav + ' pitch_keycenter=' + midi + ' lokey=' + lo + ' hikey=' + hi + '\n';
+    ds  += '      <sample path="samples/' + nomWav + '" rootNote="' + midi + '" loNote="' + lo + '" hiNote="' + hi + '" />\n';
+    if(i % 4 === 3){ e.textContent = 'écriture ' + (i+1) + '/' + z.length + '…'; await new Promise(r => setTimeout(r, 0)); }
+  }
+  ds += '    </group>\n  </groups>\n</DecentSampler>\n';
+  const lisez = base + ' : ' + z.length + ' notes (' + nomAnglais(z[0].midi) + ' à ' + nomAnglais(z[z.length-1].midi) + '), ' + sr + ' Hz, 24 bits.\n'
+    + 'Chaque WAV porte sa note (chunks smpl + inst). Nom = Instrument_Note_NumeroMIDI.wav (C4 = 60).\n\n'
+    + 'ABLETON LIVE (Sampler, Live Suite) : glisse TOUS les WAV de samples/ dans Sampler (zone Sample) : la note est lue dans le fichier.\n'
+    + '  Si les plages de touches ne s’étalent pas seules : Sampler > Zone > Key, ou convertis le .sfz en .adv avec ConvertWithMoss (gratuit).\n'
+    + 'KONTAKT : Mapping Editor > glisse les WAV > Auto-Map : tokens séparés par « _ » ; mets le 2e token (note) sur « Set to Single Key »\n'
+    + '  ou coche « Read root key from sample metadata ». Kontakt ne lit plus le .sfz depuis la version 6.\n'
+    + 'BATTERY 3 : pas de format ouvert. Trie les WAV par nom, sélectionne-les tous, glisse sur la première cellule : ils se placent dans l’ordre.\n'
+    + 'SFORZANDO / SFIZZ / DECENT SAMPLER : ouvre directement ' + base + '.sfz ou ' + base + '.dspreset.\n'
+    + 'Tout le reste (EXS, Bitwig, MPC, SF2, Kontakt v1, Ableton ADV) : ConvertWithMoss, à partir du .sfz.\n';
+  const enc = new TextEncoder();
+  entrees.push({nom: base + '/' + base + '.sfz', data: enc.encode(sfz)});
+  entrees.push({nom: base + '/' + base + '.dspreset', data: enc.encode(ds)});
+  entrees.push({nom: base + '/LISEZMOI.txt', data: enc.encode(lisez)});
+  const zip = zipSansCompression(entrees);
+  partagerBlob(zip, base + '.zip', e);
+  return zip;
+}
+$('#multiExporter')?.addEventListener('click', multiExporter);
 $('#multiGuide')?.addEventListener('click', () => { const g = $('#multiGuideTexte'); g.innerHTML = multiGuideTexte($('#multiType').value); g.hidden = !g.hidden; });
 $('#multiType')?.addEventListener('change', () => { const g = $('#multiGuideTexte'); if(!g.hidden) g.innerHTML = multiGuideTexte($('#multiType').value); });
 
