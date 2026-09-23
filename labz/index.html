@@ -8362,7 +8362,7 @@ function grilleFermer(){
     /* iOS fait défiler le DOCUMENT, pas le body : un overflow:hidden sur body ne suffit pas (vu par David, 23.09 13:18).
        Le body devient fixe et exactement égal à l'écran ; seuls les panneaux défilent, à l'intérieur. */
     'html:has(body.tel){overflow:hidden;height:100%;overscroll-behavior:none}',
-    'body.tel{position:fixed;inset:0;margin:0;overflow:hidden;box-sizing:border-box;padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px;overscroll-behavior:none}',
+    'body.tel{position:fixed;inset:0;margin:0;overflow:hidden;box-sizing:border-box;padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px;overscroll-behavior:none}',   /* padding-top : la façade (cachée) portait la marge de la barre d'état, vu au simulateur */
     'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
     'body.tel.uneFonction{display:flex;flex-direction:column}',
     'body.tel .facade{display:none!important}',
