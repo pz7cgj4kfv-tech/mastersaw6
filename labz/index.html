@@ -3230,37 +3230,32 @@ async function preparerTraitement(){
 }
 /// Étirement HORS LIGNE d'une zone (export « exactement ce qu'on entend »). Limité à MAX_TRAITEMENT s.
 async function traiterHorsLigne(d0, d1){
+  // Rendu HORS LIGNE par le même moteur que la lecture : le fichier est exactement ce qu'on entend,
+  // et il n'y a plus de limite de durée (David 23.09 : « on peut faire tout l'export du morceau en entier »).
+  // Le seul plafond est la mémoire : la sortie pèse (durée / vitesse) × canaux × 4 octets.
   if(!buffer || reglagesNeutres()) return false;
-  const z = {d: d0, f: d1};
-  const duree = (z.f - z.d)/buffer.sampleRate;
   const e = $('#etatTraitement');
-  if(duree > MAX_TRAITEMENT){
-    e.textContent = `export avec vitesse/hauteur : au plus ${MAX_TRAITEMENT} s d'un coup (ici ${duree.toFixed(0)} s)`; e.className = 'etat mal';
-    return false;
-  }
-  e.textContent = 'traitement…'; e.className = 'etat';
-  await new Promise(r => setTimeout(r, 15));
-  const s = parseFloat($('#vitesse').value);
-  const demi = parseInt($('#hauteur').value, 10);
-  // MODE BANDE. Quand « garde la tonalité » est éteint, la vitesse se comporte comme
-  // une bande ou un vinyle : ralentir descend le son. C'est une transposition de plus,
-  // exprimée en demi-tons, que l'étirement doit compenser pour que la DURÉE reste
-  // celle demandée. Allumé, on garde le comportement normal : la durée change, la
-  // hauteur non, ce qui est déjà le cas depuis le début.
-  const garde = $('#tonalite').classList.contains('on');
-  const demiTotal = demi + (garde ? 0 : 12*Math.log2(s));
-  const r = Math.pow(2, demiTotal/12);
-  const canaux = [];
-  for(let c=0;c<buffer.numberOfChannels;c++) canaux.push(buffer.getChannelData(c));
+  const g = reglagesDirect(), nc = buffer.numberOfChannels, sr = buffer.sampleRate;
+  const canaux = []; for(let c=0;c<nc;c++) canaux.push(buffer.getChannelData(c));
+  const nOut = Math.max(1, Math.round((d1 - d0)/g.s));
+  const outs = [];
+  try{ for(let c=0;c<nc;c++) outs.push(new Float32Array(nOut)); }
+  catch(x){ e.textContent = `pas assez de mémoire pour cet export (${(nOut*nc*4/1048576).toFixed(0)} Mo) : exporte une partie`; e.className = 'etat mal'; return false; }
+  const m = new MoteurDirect(canaux, sr, d0, d1, false); m.regler(g.alpha, g.r);
+  const bloc = 8192, tmp = []; for(let c=0;c<nc;c++) tmp.push(new Float32Array(bloc));
   const t0 = performance.now();
-  const res = wsola(canaux, Math.round(z.d), Math.round(z.f), r/s, buffer.sampleRate);
-  const a = audio();
-  bufTraite = a.createBuffer(res.length, res[0].length, buffer.sampleRate);
-  for(let c=0;c<res.length;c++) bufTraite.copyToChannel(res[c], c);
-  zoneTraitee = {d:z.d, f:z.f, r, s};
-  e.textContent = `× ${s.toFixed(2)} · ${demi>0?'+':''}${demi} demi-ton${Math.abs(demi)>1?'s':''}`
-    + (garde ? '' : ` · bande (${demiTotal>0?'+':''}${demiTotal.toFixed(1)} au total)`)
-    + ` · prêt (${Math.round(performance.now()-t0)} ms)`;
+  let pos = 0, k = 0;
+  while(pos < nOut && !m.termine){
+    const nb = Math.min(bloc, nOut - pos);
+    m.tirer(tmp, nb);
+    for(let c=0;c<nc;c++) outs[c].set(nb === bloc ? tmp[c] : tmp[c].subarray(0, nb), pos);
+    pos += nb;
+    if(++k % 16 === 0){ e.textContent = 'rendu ' + Math.round(pos/nOut*100) + ' %'; e.className = 'etat'; await new Promise(r => setTimeout(r, 0)); }
+  }
+  bufTraite = audio().createBuffer(nc, nOut, sr);
+  for(let c=0;c<nc;c++) bufTraite.copyToChannel(outs[c], c);
+  zoneTraitee = {d: d0, f: d1, r: 1, s: g.s};   // r = 1 : la hauteur est déjà dans le rendu
+  e.textContent = `× ${g.s.toFixed(2)} · ${g.demi>0?'+':''}${g.demi} demi-ton${Math.abs(g.demi)>1?'s':''}` + (g.garde ? '' : ' · bande') + ` · rendu (${Math.round(performance.now()-t0)} ms)`;
   e.className = 'etat ok';
   return true;
 }
@@ -3704,7 +3699,8 @@ async function exporterVers(vers){
   if(!reglagesNeutres()) await traiterHorsLigne(d0, d1);
   const traite = bufTraite && zoneTraitee && Math.round(zoneTraitee.d) === d0 && Math.round(zoneTraitee.f) === d1;
   let aEncoder = buffer, e0 = d0, e1 = d1;
-  if(traite){
+  if(traite && zoneTraitee.r === 1){ aEncoder = bufTraite; e0 = 0; e1 = bufTraite.length; }
+  else if(traite){
     // Le fichier doit être EXACTEMENT ce qu'on entend. L'étirement est déjà dans
     // bufTraite, mais la transposition se fait à la lecture : on la grave ici, avec le
     // rééchantillonnage du navigateur plutôt qu'une interpolation maison.
@@ -3726,9 +3722,11 @@ async function exporterVers(vers){
       const blob = await encoderMp3(aEncoder, e0, e1, 192, p => { e.textContent = 'MP3 ' + p + ' %'; e.className = 'etat'; });
       partagerBlob(blob, $('#nom').value.trim() + '.mp3', e);
     }catch(x){ e.textContent = 'MP3 impossible : ' + (x && x.message || x); e.className = 'etat mal'; }
+    bufTraite = null; zoneTraitee = null;   // le rendu peut peser des centaines de Mo : on le lâche
     return;
   }
   const ab = encoderWav24(aEncoder, e0, e1);
+  bufTraite = null; zoneTraitee = null;
   const dureeFinale = (e1 - e0)/aEncoder.sampleRate;
   if(!serveurOK){ partagerWav(ab, $('#nom').value.trim() + '.wav', e); return; }   // sans Mac : vers Fichiers / partage
   try{
@@ -5057,6 +5055,7 @@ async function sonSelectionne(){
   if(!reglagesNeutres()) await traiterHorsLigne(d0, d1);
   const traite = bufTraite && zoneTraitee &&
                  Math.round(zoneTraitee.d) === d0 && Math.round(zoneTraitee.f) === d1;
+  if(traite && zoneTraitee.r === 1){ const b = bufTraite; bufTraite = null; zoneTraitee = null; return b; }
   if(traite){
     const r = zoneTraitee.r;
     const lg = Math.max(1, Math.round(bufTraite.length/r));
