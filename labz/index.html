@@ -3694,8 +3694,16 @@ let serveurOK = null;                 // null = pas encore sondé
 const LOCAL = new Map();              // nom -> ArrayBuffer : fichiers importés sur cet appareil
 // Mémoire durable de l'appareil (IndexedDB) : les fichiers importés survivent à la fermeture de l'app.
 const BDD = { db: null, relu: false,
-  ouvrir(){ return new Promise(res => { try{ const r = indexedDB.open('labz-fichiers', 1);
-    r.onupgradeneeded = () => r.result.createObjectStore('fichiers'); r.onsuccess = () => res(r.result); r.onerror = () => res(null); }catch(e){ res(null); } }); },
+  ouvrir(){ return new Promise(res => { try{ const r = indexedDB.open('labz-fichiers', 2);
+    r.onupgradeneeded = () => { const db = r.result; if(!db.objectStoreNames.contains('fichiers')) db.createObjectStore('fichiers');
+                                if(!db.objectStoreNames.contains('projets')) db.createObjectStore('projets'); };
+    r.onsuccess = () => res(r.result); r.onerror = () => res(null); }catch(e){ res(null); } }); },
+  // projets (réglages d'écoute d'un morceau) gardés sur l'appareil quand le Mac n'est pas là
+  async gardeProjet(nom, etat){ const db = await this.base(); if(!db) return; try{ db.transaction('projets', 'readwrite').objectStore('projets').put(etat, nom); }catch(e){} },
+  async projet(nom){ const db = await this.base(); if(!db) return null;
+    return new Promise(res => { try{ const q = db.transaction('projets').objectStore('projets').get(nom); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); }catch(e){ res(null); } }); },
+  async projets(){ const db = await this.base(); if(!db) return [];
+    return new Promise(res => { try{ const q = db.transaction('projets').objectStore('projets').getAllKeys(); q.onsuccess = () => res(q.result || []); q.onerror = () => res([]); }catch(e){ res([]); } }); },
   async base(){ if(!this.db) this.db = await this.ouvrir(); return this.db; },
   async garder(nom, ab){ const db = await this.base(); if(!db) return; try{ db.transaction('fichiers', 'readwrite').objectStore('fichiers').put(ab, nom); }catch(e){} },
   async oublier(nom){ const db = await this.base(); if(!db) return; try{ db.transaction('fichiers', 'readwrite').objectStore('fichiers').delete(nom); }catch(e){} },
@@ -3724,7 +3732,7 @@ async function sonderServeur(){
   return serveurOK;
 }
 const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'exporterTranches',
-                       'enregistrer', 'enregistrerProjet', 'ouvrirProjet', 'versAbleton'];
+                       'enregistrer', 'versAbleton'];   // projets : désormais gardés sur l'appareil, plus « (Mac) »
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
     const st = document.createElement('style'); st.id = 'styleAutonome';
@@ -3737,7 +3745,6 @@ function appliquerAutonome(){
     b.disabled = true; b.title = 'nécessite le Mac'; b.classList.add('necessiteMac');
     b.textContent = b.textContent.trim() + ' (Mac)';   // visible au doigt, pas seulement au survol
   }
-  const p = document.getElementById('projet'); if(p){ p.disabled = true; p.title = 'nécessite le Mac'; }
   // « Rafraîchir » relit la liste du Mac : sans Mac il ne sert à rien (question David 23.09) → caché
   const rc = document.getElementById('recharger'); if(rc) rc.hidden = true;
   const im = document.getElementById('importer'); if(im) im.classList.add('primaire');   // l'action principale de Source
@@ -4017,9 +4024,9 @@ function etatCourant(){
   };
 }
 async function listerProjets(sel2){
-  if(!(await sonderServeur())) return;   // les projets vivent sur le Mac
-  const r = await fetch('/api/projets');
-  const noms = await r.json();
+  let noms;
+  if(await sonderServeur()){ const r = await fetch('/api/projets'); noms = await r.json(); }
+  else noms = await BDD.projets();   // sans Mac : les projets gardés sur l'appareil
   const s2 = $('#projet');
   s2.innerHTML = '<option value="">aucun</option>';
   for(const n of noms){
@@ -4033,8 +4040,9 @@ $('#enregistrerProjet').addEventListener('click', async () => {
   const nom = prompt('Nom du projet :', suggere);
   if(!nom) return;
   const e = $('#etatProjet');
-  await fetch('/api/projet/' + encodeURIComponent(nom), {method:'POST',
+  if(serveurOK) await fetch('/api/projet/' + encodeURIComponent(nom), {method:'POST',
     headers:{'Content-Type':'application/json'}, body: JSON.stringify(etatCourant())});
+  else await BDD.gardeProjet(nom, etatCourant());   // sans Mac : sur l'appareil (« elle sauvait », David 23.09)
   await listerProjets(nom);
   e.textContent = '✓ enregistré'; e.className = 'etat ok';
   noter('projet enregistre', {projet: nom});
@@ -4043,8 +4051,9 @@ $('#ouvrirProjet').addEventListener('click', async () => {
   const nom = $('#projet').value;
   if(!nom) return;
   const e = $('#etatProjet');
-  const r = await fetch('/api/projet/' + encodeURIComponent(nom));
-  const p = await r.json();
+  let p;
+  if(serveurOK){ const r = await fetch('/api/projet/' + encodeURIComponent(nom)); p = await r.json(); }
+  else p = (await BDD.projet(nom)) || {erreur: 'projet introuvable sur cet appareil'};
   if(p.erreur){ e.textContent = p.erreur; e.className='etat mal'; return; }
   if(p.morceau && p.morceau !== $('#fichier').value){
     $('#fichier').value = p.morceau;
