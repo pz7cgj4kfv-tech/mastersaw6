@@ -1825,7 +1825,7 @@ let tT;function toast(m,ms){const t=$('#toast');t.textContent=m;t.classList.add(
 /* (l'ancien 2e handler clavier vivait ici — fusionné dans le handler unique plus haut) */
 
 /* Dans l'app Studio (Capacitor) : un chemin pour revenir au menu (Master ↔ Transient Labz). */
-(function(){const inApp=!!window.Capacitor||location.protocol==='capacitor:';if(!inApp)return;
+(function(){const inApp=!!window.Capacitor||location.protocol==='capacitor:'||(location.hostname==='localhost'&&!location.port&&location.protocol!=='http:');if(!inApp)return;
   const r=document.createElement('a');r.href='../index.html';r.textContent='← Studio';
   r.style.cssText='position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9000;font:700 12px system-ui,sans-serif;color:var(--ink);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:6px 10px;text-decoration:none;box-shadow:var(--bevel)';
   document.body.appendChild(r);})();

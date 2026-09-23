@@ -3570,18 +3570,30 @@ window.addEventListener('resize', redessiner);
    silence. Ici : on SONDE le serveur au départ ; s'il n'est pas là, les fichiers importés
    vivent EN MÉMOIRE sur l'appareil (décodés sur place, comme Master), l'export part vers
    Fichiers/partage, et ce qui a vraiment besoin du Mac se grise EN LE DISANT. */
-const DANS_APP = !!window.Capacitor || location.protocol === 'capacitor:';
+// Dans l'app : le bridge Capacitor, OU le serveur interne (localhost SANS port, en capacitor:// ou https://).
+// Le serveur du Mac et le serveur de test, eux, ont toujours un port.
+const DANS_APP = !!window.Capacitor || location.protocol === 'capacitor:'
+              || (location.hostname === 'localhost' && !location.port && location.protocol !== 'http:');
 let serveurOK = null;                 // null = pas encore sondé
 const LOCAL = new Map();              // nom -> ArrayBuffer : fichiers importés sur cet appareil
 async function sonderServeur(){
   if(serveurOK !== null) return serveurOK;
   try{
     const c = new AbortController(); const t = setTimeout(() => c.abort(), 1500);
-    const r = await fetch('/api/fichiers', {signal: c.signal}); clearTimeout(t);
-    serveurOK = r.ok;
+    const r = await fetch('/api/fichiers', {signal: c.signal, cache: 'no-store'}); clearTimeout(t);
+    // ⚠️ Vu le 23.09 sur iPhone : le serveur interne de l'app répond « 200 » à TOUT (il renvoie la page
+    // d'accueil), donc r.ok ne prouve rien. Le Mac, lui, renvoie un TABLEAU JSON. On vérifie le contenu.
+    const j = r.ok ? await r.json() : null;
+    serveurOK = Array.isArray(j);
   }catch(e){ serveurOK = false; }
   document.body.classList.toggle('autonome', !serveurOK);
   if(!serveurOK) appliquerAutonome();
+  else if(!DANS_APP && !canal){
+    // le « un seul onglet à la fois » n'a de sens qu'avec le Mac et plusieurs onglets ouverts
+    try{ canal = new BroadcastChannel('memo-atelier');
+         canal.onmessage = ev => { if(ev.data === 'jeprends') perdreLaMain(); };
+         canal.postMessage('jeprends'); }catch(e){}
+  }
   return serveurOK;
 }
 const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'exporterTranches',
@@ -3621,8 +3633,11 @@ function partagerWav(ab, nom, e){
   if(e){ e.textContent = '✓ ' + nom; e.className = 'etat ok'; }
 }
 // Dans l'app (pas de bouton « retour » de navigateur), un chemin pour revenir au menu Studio / à Master.
-if(DANS_APP){
-  const r = document.createElement('a'); r.href = '../index.html'; r.textContent = '← Studio';
+// En ligne (…/mastersaw6/labz/), le même bouton mène à Master v4.
+const RETOUR = DANS_APP ? ['../index.html', '← Studio']
+             : (location.pathname.includes('/mastersaw6/') ? ['../v4/', '← Master'] : null);
+if(RETOUR){
+  const r = document.createElement('a'); r.href = RETOUR[0]; r.textContent = RETOUR[1];
   r.style.cssText = 'position:fixed;left:10px;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:9000;'
     + 'font:700 13px system-ui,sans-serif;color:#23211d;background:#fbfaf7;border:1px solid #d3d8da;'
     + 'border-radius:9px;padding:7px 11px;text-decoration:none;box-shadow:0 1px 3px rgba(0,0,0,.15)';
@@ -3635,8 +3650,7 @@ if(DANS_APP){
    avoir rafraîchi la page. Le dernier onglet ouvert prend la main et fait taire les autres.
    Dans l'app (une seule vue, jamais d'autre onglet) ce mécanisme n'a pas de sens et coupait
    le son à tort (bandeau rouge « un autre onglet a pris la main ») : désactivé dans l'app. */
-let canal = null;
-try{ if(!DANS_APP) canal = new BroadcastChannel('memo-atelier'); }catch(e){}
+let canal = null;   // créé dans sonderServeur() SEULEMENT si le Mac répond vraiment (sinon : faux bandeau « muet »)
 let aLaMain = true;
 
 function perdreLaMain(){
