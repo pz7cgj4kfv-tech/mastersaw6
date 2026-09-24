@@ -990,10 +990,20 @@ body.tel.papier  #barreTel{ background:#fffef9; border-color:#dcd8cd }
 #grilleEcrans.ouverte .grille-fond{ opacity:1 }
 .grille-boite{
   position:absolute; left:0; right:0; bottom:0; padding:16px 14px calc(18px + env(safe-area-inset-bottom));
-  border-radius:16px 16px 0 0; transform:translateY(100%); transition:transform .18s ease-out;
+  border-radius:16px 16px 0 0; transform:translateY(100%) scale(.92); transform-origin:bottom center;
+  transition:transform .34s cubic-bezier(.34,1.56,.64,1);
   background:linear-gradient(180deg,var(--acier2),var(--acier1)); border-top:1px solid var(--acier4);
   max-height:88vh; overflow:auto;
 }
+/* demande David 24.09 (« comme le haut-parleur du Centre de contrôle ») : les tuiles se
+   placent en cascade au lieu d'apparaître toutes en même temps. */
+@keyframes tuilePop{0%{opacity:0;transform:scale(.7)}100%{opacity:1;transform:scale(1)}}
+#grilleEcrans.ouverte .grille-tuile{animation:tuilePop .3s cubic-bezier(.34,1.56,.64,1) both}
+#grilleEcrans.ouverte .grille-tuile:nth-child(1){animation-delay:.03s} #grilleEcrans.ouverte .grille-tuile:nth-child(2){animation-delay:.06s}
+#grilleEcrans.ouverte .grille-tuile:nth-child(3){animation-delay:.09s} #grilleEcrans.ouverte .grille-tuile:nth-child(4){animation-delay:.12s}
+#grilleEcrans.ouverte .grille-tuile:nth-child(5){animation-delay:.15s} #grilleEcrans.ouverte .grille-tuile:nth-child(6){animation-delay:.18s}
+#grilleEcrans.ouverte .grille-tuile:nth-child(7){animation-delay:.21s} #grilleEcrans.ouverte .grille-tuile:nth-child(8){animation-delay:.24s}
+#grilleEcrans.ouverte .grille-tuile:nth-child(9){animation-delay:.27s} #grilleEcrans.ouverte .grille-tuile:nth-child(n+10){animation-delay:.30s}
 body.cockpit .grille-boite{ background:linear-gradient(180deg,#fdfdfc,#eef0f0); border-color:#c2c8cb }
 body.papier  .grille-boite{ background:#fffef9; border-color:#dcd8cd }
 #grilleEcrans.ouverte .grille-boite{ transform:translateY(0) }
@@ -1273,6 +1283,7 @@ body.tel .modele{ font-size:8.5px }
     <select id="fichier"><option>…</option></select>
     <button id="recharger">Rafraîchir</button>
     <button id="importer">Importer…</button>
+    <button id="nouveauSource" title="Tout lâcher et repartir de zéro">Nouveau</button>
     <button id="enregistrer" class="gros">Enregistrer</button>
     <span id="niveauEntree" class="compteur" hidden>·</span>
     <input type="file" id="fichierEntree" accept="audio/*,video/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.mov,.mp4,.m4v" multiple hidden>
@@ -1433,7 +1444,7 @@ body.tel .modele{ font-size:8.5px }
       <option value="silence" selected>jusqu'au silence</option>
       <option value="libre">libres, sans limite</option>
     </select>
-    <button id="sensiAuto" class="on">Sensibilité auto</button>
+    <button id="sensiAuto" class="on" title="Allumé par défaut : la sensibilité se règle seule à chaque Découper. Bouger le curseur l'éteint (réglage manuel).">Sensibilité auto</button>
     <label class="petit" for="decalage">Décalage</label>
     <input type="range" id="decalage" min="-40" max="20" step="1" value="0" style="width:88px">
     <span class="valeur" id="vDecalage">0 ms</span>
@@ -1457,7 +1468,9 @@ body.tel .modele{ font-size:8.5px }
     <button id="instSelection">Prendre la sélection</button>
     <button id="instTout">Prendre tout le son</button>
     <button id="instPad">Prendre le premier pad</button>
-    <button id="instOctave">Octave 0</button>
+    <button id="instOctaveMoins" title="Octave -1">−</button>
+    <span id="instOctave" class="valeur" style="min-width:64px;text-align:center;display:inline-block">Octave 0</span>
+    <button id="instOctavePlus" title="Octave +1">+</button>
     <button id="instBoucle" title="Tenir la note en bouclant le son">Boucler</button>
     <label class="petit" for="instRacine">Racine</label>
     <input type="text" id="instRacine" value="60" style="width:52px;text-align:center">
@@ -1937,19 +1950,24 @@ function dessinerVue(){
   const nEch = vue.fin - vue.debut;
   // sélection
   if(sel.fin > sel.debut){
+    // La tête peut être posée HORS de la sélection sans l'effacer (on peut revenir dessus) :
+    // zoneLecture() l'ignore alors et joue depuis la tête jusqu'à la fin. Sans ce distinguo,
+    // la boîte reste pleine et ambrée comme si elle allait jouer, on entend autre chose :
+    // « j'entends une caisse claire alors qu'il n'y a rien » (David 24.09). Grisée = ne jouera pas.
+    const active = curseur >= sel.debut - 1 && curseur <= sel.fin + 1;
     const x0 = (sel.debut - vue.debut)/nEch*w, x1 = (sel.fin - vue.debut)/nEch*w;
-    gVue.fillStyle = 'rgba(240,168,48,.16)';
+    gVue.fillStyle = active ? 'rgba(240,168,48,.16)' : 'rgba(150,150,150,.10)';
     gVue.fillRect(x0, 0, x1-x0, h);
-    gVue.strokeStyle = 'rgba(255,210,127,.85)'; gVue.lineWidth = 1*d;
+    gVue.strokeStyle = active ? 'rgba(255,210,127,.85)' : 'rgba(180,180,180,.5)'; gVue.lineWidth = 1*d;
     gVue.beginPath(); gVue.moveTo(x0+.5,0); gVue.lineTo(x0+.5,h);
     gVue.moveTo(x1-.5,0); gVue.lineTo(x1-.5,h); gVue.stroke();
     // A / B sur les bords de la boucle (repris de la capture PN, David 24.09 : « clarté, ergonomie »,
     // direction « Blanc clinique » choisie) : la borne se lit d'un coup d'œil, pas juste un trait.
     if(x1-x0 > 3*d){
       gVue.font = '700 ' + (11*d) + 'px ui-monospace, Menlo, monospace';
-      gVue.fillStyle = '#f0a830';
+      gVue.fillStyle = active ? '#f0a830' : '#9a9a9a';
       gVue.fillRect(x0, 0, 14*d, 15*d); gVue.fillRect(x1-14*d, 0, 14*d, 15*d);
-      gVue.fillStyle = '#241503'; gVue.textAlign = 'center'; gVue.textBaseline = 'top';
+      gVue.fillStyle = active ? '#241503' : '#3a3a3a'; gVue.textAlign = 'center'; gVue.textBaseline = 'top';
       gVue.fillText('A', x0+7*d, 2*d); gVue.fillText('B', x1-7*d, 2*d);
       gVue.textAlign = 'left';
     }
@@ -2175,7 +2193,7 @@ function dessinerPistes(){
       melanger();
     });
     const s2 = document.createElement('button');
-    s2.textContent = 'seule';
+    s2.textContent = 'solo';
     s2.style.fontSize = '9.5px';
     s2.style.padding = '7px 9px 7px 22px';
     s2.addEventListener('click', () => {
@@ -2269,11 +2287,14 @@ async function exporterPistesVers(vers){
 $('#exporterPistes').addEventListener('click', () => exporterPistesVers('ableton'));
 $('#pistesIphone').addEventListener('click', () => exporterPistesVers('iphone'));
 $('#toutesPistes').addEventListener('click', async () => {
+  // melanger() relance déjà la lecture SEULE si elle tournait (David 24.09 : « Tout écouter,
+  // c'est très bizarre » — un second jouer() ici la coupait et la redémarrait une 2e fois,
+  // deux MoteurDirect construits puis détruits en quelques ms, petit décrochage audible).
+  const jouaitDeja = enLecture;
   pistes.forEach(p => p.actif = true);
   dessinerPistes();
   await melanger();
-  reprendreLaMainSiBesoin();
-  jouer();                 // le bouton s'appelle « tout écouter » : il écoute.
+  if(!jouaitDeja){ reprendreLaMainSiBesoin(); jouer(); }   // le bouton s'appelle « tout écouter » : il écoute.
 });
 
 $('#separer').addEventListener('click', async () => {
@@ -2508,6 +2529,12 @@ function zoneLecture(){
 
 function stopper(){
   idLecture++;                       // tout ce qui vient de l'ancienne lecture est périmé
+  // La tête ne suit le son qu'à travers suivre() (requestAnimationFrame), qui NE TOURNE PAS
+  // quand la page n'est pas rendue (écran verrouillé, app en arrière-plan — le son continue,
+  // demandé par David le 23.09). curseur peut alors être périmé de plusieurs secondes au
+  // moment du Stop : on le remet à jour ICI, avant de couper, sinon Lecture repart d'un
+  // endroit qui n'est plus le bon (trouvé par un agent le 24.09, plainte « pause/reprise »).
+  if(enLecture) curseur = positionCourante();
   if(typeof arreterNavette === 'function') arreterNavette();
   toutFaireTaire();
   arreterDirect();
@@ -3137,6 +3164,11 @@ class MoteurDirect {
     if(this.posA + N > n){
       if(!this.boucle || n < N){ this.fini = true; return false; }
       this.posA = 0; this.premier = true;
+      // Sans ça, la fin de la boucle (encore dans l'accumulateur, pas remise à zéro) se
+      // superposait au début qu'on vient de reboucler : un petit clic à chaque tour, trouvé
+      // par un agent le 24.09 en relisant MoteurDirect (« c'est bizarre » sur la boucle).
+      for(let c=0;c<this.nc;c++) this.acc[c].fill(0);
+      this.accW.fill(0);
     }
     let best = Math.round(this.posA);
     if(!this.premier){
@@ -3459,11 +3491,14 @@ function zoneDecoupe(){
 /// Cherche la sensibilité qui donne une densité musicalement plausible (2 à 6 coups par
 /// seconde). Fait en quelques essais : c'est instantané comparé au reste.
 function sensibiliteAuto(d0, d1){
-  const duree = (d1-d0)/buffer.sampleRate;
+  // sur tout le morceau, chercher la bonne sensibilité sur un échantillon suffit (20 s) :
+  // pas besoin de refaire le calcul complet 8 fois sur des minutes de son avant de dessiner.
+  const d1r = (d1 - d0 > 20*buffer.sampleRate) ? d0 + 20*buffer.sampleRate : d1;
+  const duree = (d1r-d0)/buffer.sampleRate;
   const viseBas = 1.5*duree, viseHaut = 6*duree;
   let meilleure = 0.5, meilleurEcart = Infinity;
   for(const sv of [0.15,0.25,0.35,0.45,0.55,0.65,0.75,0.85]){
-    const n = detecterTransitoires(d0, d1, sv).length;
+    const n = detecterTransitoires(d0, d1r, sv).length;
     const ecart = n < viseBas ? viseBas - n : (n > viseHaut ? n - viseHaut : 0);
     if(ecart < meilleurEcart){ meilleurEcart = ecart; meilleure = sv; }
     if(ecart === 0) break;
@@ -3473,6 +3508,11 @@ function sensibiliteAuto(d0, d1){
 
 $('#decouper').addEventListener('click', () => {
   if(!buffer) return;
+  const surSel0 = sel.fin - sel.debut > 1;
+  if(!surSel0 && !tranches.length && !confirm(
+    'Aucune sélection posée : le morceau ENTIER va être découpé.\n\nSélectionne d\'abord une partie si tu n\'en veux qu\'un bout.\n\nOn découpe tout quand même ?')){
+    $('#etatTranches').textContent = 'annulé'; $('#etatTranches').className = 'etat'; return;
+  }
   retenir('découpe');
   const z = zoneDecoupe();
   let sv = parseFloat($('#sensi').value);
@@ -3753,11 +3793,14 @@ async function exporterVers(vers){
     bufTraite = null; zoneTraitee = null;   // le rendu peut peser des centaines de Mo : on le lâche
     return;
   }
-  const ab = encoderWav24(aEncoder, e0, e1);
-  bufTraite = null; zoneTraitee = null;
+  // tout le bloc WAV en un seul try/finally : un export long (24 bits, plusieurs minutes) peut
+  // manquer de mémoire à l'encodage — sans ce filet, bufTraite/zoneTraitee restaient posés
+  // (des centaines de Mo gardés) et pouvaient fausser une lecture suivante (trouvé par un
+  // agent le 24.09 en relisant l'export : « écriture… » qui ne se termine jamais est le symptôme).
   const dureeFinale = (e1 - e0)/aEncoder.sampleRate;
-  if(!serveurOK){ partagerWav(ab, $('#nom').value.trim() + '.wav', e); return; }   // sans Mac : vers Fichiers / partage
   try{
+    const ab = encoderWav24(aEncoder, e0, e1);
+    if(!serveurOK){ partagerWav(ab, $('#nom').value.trim() + '.wav', e); return; }   // sans Mac : vers Fichiers / partage
     const r = await fetch('/api/export', {method:'POST', headers:{
       'X-Nom': encodeURIComponent($('#nom').value.trim()+'.wav'),
       'X-Vers': vers,
@@ -3768,7 +3811,9 @@ async function exporterVers(vers){
     e.className='etat ok';
     noter('export', {vers: vers, duree: dureeFinale, note: $('#note').value.trim()});
   }catch(err){
-    e.textContent = 'raté : ' + err; e.className='etat mal';
+    e.textContent = 'raté : ' + ((err && err.message) || err); e.className='etat mal';
+  }finally{
+    bufTraite = null; zoneTraitee = null;
   }
 }
 $('#exporter').addEventListener('click', ()=> exporterVers('samples'));
@@ -3853,6 +3898,9 @@ $('#nouveau').addEventListener('click', () => {
   majCompteurs(0); redessiner();
   $('#fichier').focus();
 });
+// Raccourci sur l'écran Source (David 24.09 : « il faudrait un bouton Nouveau » — celui-ci
+// existait déjà mais à 2 taps + un défilement dans le tiroir Onde, un agent l'a retrouvé).
+$('#nouveauSource').addEventListener('click', () => $('#nouveau').click());
 $('#ampli').addEventListener('input', e => {
   const k = parseFloat(e.target.value);
   $('#vAmpli').textContent = '× ' + (k % 1 === 0 ? k : k.toFixed(1));
@@ -8218,11 +8266,16 @@ $('#instRec').addEventListener('click', e => {
   instDire(inst.rec ? 'joue, ça se garde' : inst.notes.length + ' notes en mémoire');
 });
 $('#instRendre').addEventListener('click', instRendre);
-$('#instOctave').addEventListener('click', e => {
-  inst.octave = (inst.octave + 2) % 4 - 1;
-  e.target.textContent = 'Octave ' + (inst.octave >= 0 ? '+' : '') + inst.octave;
+// David 24.09 : « je n'ai pas l'octave, il faudrait +1 à moi, pas devoir tout faire » — l'ancien
+// bouton unique tournait dans un seul sens (0→1→2→−1→0…), impossible de descendre directement.
+// Deux boutons −/+ comme les capsules vitesse/hauteur du même soir.
+function instOctaveRegler(d){
+  inst.octave = Math.max(-3, Math.min(3, inst.octave + d));
+  $('#instOctave').textContent = 'Octave ' + (inst.octave >= 0 ? '+' : '') + inst.octave;
   instClavier();
-});
+}
+$('#instOctaveMoins').addEventListener('click', () => instOctaveRegler(-1));
+$('#instOctavePlus').addEventListener('click', () => instOctaveRegler(1));
 $('#instRacine').addEventListener('change', e => {
   inst.racine = Math.max(12, Math.min(108, parseInt(e.target.value,10) || 60));
   instDire('racine ' + instNom(inst.racine));
@@ -8653,9 +8706,9 @@ function grilleFermer(){
       if(b.dataset.cible === 'selVide'){
         const avaitSel = sel.fin > sel.debut, avaitTranches = tranches.length > 0;
         if(avaitSel) $('#selVide').click();
-        else if(avaitTranches) $('#effacerTranches').click();
+        if(avaitTranches) $('#effacerTranches').click();
         b.classList.add('on');
-        b.textContent = avaitSel ? 'Effacé' : (avaitTranches ? 'Tranches effacées' : 'rien à effacer');
+        b.textContent = (avaitSel && avaitTranches) ? 'Tout effacé' : avaitSel ? 'Effacé' : (avaitTranches ? 'Tranches effacées' : 'rien à effacer');
         setTimeout(() => { b.classList.remove('on'); b.textContent = 'Effacer'; }, 900);
         return;
       }
@@ -8725,7 +8778,17 @@ function grilleFermer(){
     'body.tel #panneauOnde.montre #apercu{height:40px}',
     'body.tel[data-ecran="jouer"] #panneauOnde{display:none!important}',
     'body.tel[data-ecran="onde"]:not(.tiroirOuvert) #tiroirContenu{display:none}',
-    'body.tel.tiroirOuvert #tiroirContenu{display:block;flex:1 1 0;min-height:0;overflow:auto;margin:0 8px;-webkit-overflow-scrolling:touch}',
+    'body.tel.tiroirOuvert #tiroirContenu{display:block;flex:1 1 0;min-height:0;overflow:auto;margin:0 8px;-webkit-overflow-scrolling:touch;'
+      + 'transform-origin:top center;animation:tiroirPop .32s cubic-bezier(.34,1.56,.64,1) both}',
+    // demande David 24.09 : « comme le haut-parleur du Centre de contrôle, tu cliques, il s'ouvre,
+    // il y a un effet, tout part » — le tiroir s'agrandit depuis le bouton ⋯, ses deux panneaux
+    // se placent l'un après l'autre au lieu d'apparaître d'un bloc.
+    '@keyframes tiroirPop{0%{opacity:0;transform:scale(.86) translateY(-10px)}100%{opacity:1;transform:scale(1) translateY(0)}}',
+    '@keyframes tiroirEnfant{0%{opacity:0;transform:translateY(-8px) scale(.96)}100%{opacity:1;transform:none}}',
+    'body.tel.tiroirOuvert #tiroirContenu > *{animation:tiroirEnfant .3s cubic-bezier(.34,1.56,.64,1) both}',
+    'body.tel.tiroirOuvert #tiroirContenu > *:nth-child(1){animation-delay:.04s}',
+    'body.tel.tiroirOuvert #tiroirContenu > *:nth-child(2){animation-delay:.1s}',
+    'body.tel.tiroirOuvert #tiroirContenu > *:nth-child(3){animation-delay:.16s}',
     'body.tel.tiroirOuvert #tiroirContenu .panneau.montre{display:block!important;overflow:visible;margin:0 0 8px;padding:8px 10px}',
     'body.tel.tiroirOuvert #panneauOnde.montre{flex:0 0 30vh;min-height:0}',
     'body.tel #tiroirMini{display:flex;gap:5px;padding:6px 0 0;flex:none}',
