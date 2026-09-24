@@ -194,7 +194,11 @@ button#enregistrer.on::before{
 .etat.mal{ color:#ff8a72 }
 /* L'onde en plein écran : pour aller chercher une boucle au sample près sans que le
    reste de la façade prenne la place. */
-body.grandEcran > *:not(#panneauOnde){ display:none !important }
+/* le bouton de sortie doit SURVIVRE au plein écran, sinon on est bloqué dedans (constaté 24.09,
+   David « je ne peux pas dézoomer, je ne peux plus rien faire » : #sortirPlein est un enfant
+   direct de body, ajouté APRÈS ce CSS, et cette règle l'effaçait lui aussi) */
+body.grandEcran > *:not(#panneauOnde):not(#sortirPlein){ display:none !important }
+body.grandEcran #sortirPlein{ display:block !important }
 body.grandEcran{ padding:0 }
 body.grandEcran #panneauOnde{
   position:fixed; inset:0; margin:0; border-radius:0; padding:8px;
