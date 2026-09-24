@@ -136,6 +136,10 @@ button::before{
 }
 button:hover{ background:linear-gradient(180deg,#6b7981 0%, var(--acier4) 38%, #313a40 100%) }
 button:active{ transform:translateY(2px); box-shadow:0 0 0 #0a0d0f, inset 0 2px 5px rgba(0,0,0,.6) }
+/* flash visible après le clic, plus long que :active (qui disparaît dès le doigt levé) : la preuve
+   qu'un bouton a bien réagi, même quand l'effet lui-même est petit ou déjà égal. David 24.09 :
+   « il faut qu'ils te disent quand ils travaillent, sinon je sais pas s'il faut rappuyer ». */
+button.presse{ background:var(--ambre-vif) !important; color:#241503 !important; transition:background .15s }
 button.on{ color:var(--ambre-vif) }
 button.on::before{
   background:radial-gradient(circle at 38% 34%, #fff0cf, var(--ambre) 50%, #b06a09 100%);
@@ -678,6 +682,7 @@ body.cockpit .notes{
 /* ---------- faders : gros, moletés, VISIBLES ---------- */
 .tranches{ display:flex; gap:20px; flex-wrap:wrap }
 .tranche{ display:flex; flex-direction:column; align-items:center; gap:7px; min-width:86px }
+#decoupeMode{ min-width:148px }   /* largeur fixe : choisir une option plus longue ne doit pas faire sauter la rangée à la ligne */
 .tranche .valeur{
   font-family:var(--mono); font-size:11px; color:var(--ambre-vif);
   font-variant-numeric:tabular-nums; text-shadow:0 0 7px rgba(255,168,41,.4);
@@ -1817,6 +1822,9 @@ function resume(id, txt){
   if(e) e.textContent = txt || '';
 }
 let ctx, buffer, source, gainNode;
+let tauxSource = 1;   // la vitesse RÉELLEMENT appliquée à `source` (pas la valeur du curseur, qui peut
+                       // déjà avoir changé sous le doigt avant que la lecture ne redémarre — bug trouvé
+                       // le 24.09 : « je mets moins vite, ça marche pas », la position sautait en arrière)
 let vue = {debut:0, fin:0};            // fenêtre affichée, en échantillons
 let sel = {debut:0, fin:0};            // sélection, en échantillons
 let enLecture = false, tDepart = 0, posDepart = 0, rafId = 0;
@@ -2572,7 +2580,8 @@ async function jouer(){
     source.start(0, 0, boucler ? undefined : Math.max(0.002, f));
   }else{
     source.buffer = buffer;
-    source.playbackRate.value = parseFloat($('#vitesse').value);
+    tauxSource = parseFloat($('#vitesse').value);
+    source.playbackRate.value = tauxSource;
     d = z.d/buffer.sampleRate; f = z.f/buffer.sampleRate;
     if(boucler){ source.loop = true; source.loopStart = d; source.loopEnd = f; }
     source.start(0, d, boucler ? undefined : Math.max(0.002, f - d));
@@ -2597,7 +2606,7 @@ function positionCourante(){
   if(!enLecture) return curseur;
   if(moteur) return Math.max(0, Math.min(buffer.length, moteur.position()));
   const a = audio();
-  const vit = parseFloat($('#vitesse').value);
+  const vit = tauxSource;   // pas $('#vitesse').value : elle peut avoir changé avant que jouer() ne redémarre
   const z = zoneLecture();
   if(!buffer) return curseur;
   const traite = bufTraite && zoneTraitee && zoneTraitee.d === z.d && zoneTraitee.f === z.f;
@@ -3546,6 +3555,11 @@ $('#effacerTranches').addEventListener('click', () => {
   retenir('tranches effacées');
   tranches = []; $('#etatTranches').textContent = ''; redessiner();
 });
+$('#decouper').addEventListener('click', () => { const b=$('#decouper'); b.classList.add('presse'); setTimeout(()=>b.classList.remove('presse'),500); });
+$('#marquePlus').addEventListener('click', () => { const b=$('#marquePlus'); b.classList.add('presse'); setTimeout(()=>b.classList.remove('presse'),500); });
+$('#marqueMoins').addEventListener('click', () => { const b=$('#marqueMoins'); b.classList.add('presse'); setTimeout(()=>b.classList.remove('presse'),500); });
+$('#effacerTranches').addEventListener('click', () => { const b=$('#effacerTranches'); b.classList.add('presse'); setTimeout(()=>b.classList.remove('presse'),500); });
+$('#sensiAuto').addEventListener('click', () => { const b=$('#sensiAuto'); b.classList.add('presse'); setTimeout(()=>b.classList.remove('presse'),500); });
 $('#parVelocite').addEventListener('click', e => e.target.classList.toggle('on'));
 
 /// Prolonge une tranche tant qu'il reste du son, pour ne pas couper une queue de reverb.
@@ -8632,7 +8646,21 @@ function grilleFermer(){
     t.innerHTML = '<button data-cible="decouper">✂ Découper</button><button data-cible="tout">Tout</button>'
                 + '<button data-cible="zoomSel">Zoom</button><button data-cible="selVide">Effacer</button><button data-cible="exporter">Exporter</button>'
                 + '<button id="tiroirPlus" title="Tous les réglages de lecture et de découpe">⋯</button>';
-    t.querySelectorAll('button[data-cible]').forEach(b => b.addEventListener('click', () => { const c = document.getElementById(b.dataset.cible); if(c) c.click(); }));
+    t.querySelectorAll('button[data-cible]').forEach(b => b.addEventListener('click', () => {
+      // « Effacer » du tiroir compact : David 24.09, « j'efface les tranches, il ne se passe rien ».
+      // Cause : ce bouton n'effaçait QUE la sélection (#selVide) ; les tranches de découpe vivent
+      // ailleurs (#effacerTranches, dans le tiroir ⋯). Ici il fait ce qui a un effet visible, et le dit.
+      if(b.dataset.cible === 'selVide'){
+        const avaitSel = sel.fin > sel.debut, avaitTranches = tranches.length > 0;
+        if(avaitSel) $('#selVide').click();
+        else if(avaitTranches) $('#effacerTranches').click();
+        b.classList.add('on');
+        b.textContent = avaitSel ? 'Effacé' : (avaitTranches ? 'Tranches effacées' : 'rien à effacer');
+        setTimeout(() => { b.classList.remove('on'); b.textContent = 'Effacer'; }, 900);
+        return;
+      }
+      const c = document.getElementById(b.dataset.cible); if(c) c.click();
+    }));
     t.querySelector('#tiroirPlus').addEventListener('click', () => { document.body.classList.toggle('tiroirOuvert'); setTimeout(() => { try{ redessiner(); }catch(e){} }, 60); });
     po.appendChild(t);
     // deuxième rangée, TOUT PETITS boutons (demande David) : zoom −/+ autour de la tête, tout voir, bords de la boucle, suivre, annuler
@@ -8757,6 +8785,10 @@ function grilleFermer(){
       + 'background:#fbfaf7;color:#1f1d1a;border:1px solid #d9d4c8;border-radius:10px;font-variant-numeric:tabular-nums}',
     'body.tel .tranche:has(#vitesse) .pas button[data-d="0.05"],body.tel .tranche:has(#hauteur) .pas button[data-d="1"]{order:3}',
     'body.tel #tonalite{order:4;font-size:11.5px;padding:0 12px;border:1.5px solid #f0a63a;background:transparent;color:#8a5711}',
+    // #sensi (Découper aux transitoires) trop imprécis au doigt : un glissement minime envoie la valeur
+    // à un bout de la plage (David 24.09 : « tu peux faire un vade qui va jusqu'à tout à droite »).
+    'body.tel #sensi{width:100%!important;flex:1 1 100%;order:1;min-width:0}',
+    'body.tel .rangee:has(#decouper){row-gap:10px}',
     'body.tel #tonalite.on{background:transparent;color:#a8560b;border-color:#f0a63a}',
     'body.tel #etatTraitement{order:5;flex-basis:100%}'
   ].join('\n');
