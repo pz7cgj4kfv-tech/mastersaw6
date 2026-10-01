@@ -140,6 +140,20 @@ button:active{ transform:translateY(2px); box-shadow:0 0 0 #0a0d0f, inset 0 2px 
    qu'un bouton a bien réagi, même quand l'effet lui-même est petit ou déjà égal. David 24.09 :
    « il faut qu'ils te disent quand ils travaillent, sinon je sais pas s'il faut rappuyer ». */
 button.presse{ background:var(--ambre-vif) !important; color:#241503 !important; transition:background .15s }
+/* ---- Transclasses ---- */
+.tc-infos{ display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 18px; margin:2px 0 8px }
+.tc-cle{ font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--grave, #7a8790) }
+.tc-cle b{ font-size:15px; letter-spacing:0; text-transform:none; color:var(--ambre-vif); margin-left:4px }
+.tc-accord{ margin-left:auto; display:flex; align-items:baseline; gap:10px }
+.tc-accord b{ font-size:30px; line-height:1; color:var(--ambre-vif); font-variant-numeric:tabular-nums }
+.tc-accord span{ font-size:13px; opacity:.7 }
+.tc-piano{ display:block; width:100%; height:46vh; min-height:220px; border-radius:6px; background:#0b0d0c; touch-action:manipulation }
+.tc-tab{ display:block; width:100%; height:128px; margin-top:8px; border-radius:6px; background:#0b0d0c }
+.tc-vit{ display:inline-flex; align-items:center; gap:4px }
+.tc-vit button{ min-width:38px; padding-left:8px; padding-right:8px }
+.tc-fichiers{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px }
+.tc-fichiers a{ font-size:12.5px; color:var(--ambre-vif); text-decoration:none; border:1px solid currentColor; border-radius:6px; padding:4px 9px; opacity:.9 }
+.tc-aide{ margin-top:8px }
 button.on{ color:var(--ambre-vif) }
 button.on::before{
   background:radial-gradient(circle at 38% 34%, #fff0cf, var(--ambre) 50%, #b06a09 100%);
@@ -1651,6 +1665,28 @@ body.tel .modele{ font-size:8.5px }
   </div>
 </div>
 
+<div class="panneau" id="panneauTranscrire">
+  <!-- TRANSCLASSES (David 01.10.2026) : « un programme comme Reprise, simple, qui marche direct », plus
+       la basse sur le manche et l'analyse à sa façon. Le calcul tourne sur le Mac (serveur du Labz). -->
+  <div class="rangee" style="margin-bottom:8px">
+    <button id="transcrire" class="primaire">Transcrire ce morceau</button>
+    <button id="tcJouer">▶ Lecture</button>
+    <span class="tc-vit" id="tcVit"><span class="petit">Vitesse</span>
+      <button data-v="0.25">¼</button><button data-v="0.5">½</button><button data-v="0.75">¾</button><button data-v="1">1</button></span>
+    <span id="tcEtat" class="etat"></span>
+  </div>
+  <div class="tc-infos">
+    <span class="tc-cle">Tonalité <b id="tcTon">—</b></span>
+    <span class="tc-cle">Tempo <b id="tcBpm">—</b></span>
+    <span class="tc-accord"><b id="tcAccord">—</b><span id="tcSuivant"></span></span>
+  </div>
+  <canvas id="tcPiano" class="tc-piano"></canvas>
+  <canvas id="tcTab" class="tc-tab"></canvas>
+  <div class="tc-fichiers" id="tcFichiers"></div>
+  <p class="aide tc-aide">Tout ce qui sort est une hypothèse d'oreille : les notes, les accords, et surtout la place des notes sur le manche.
+    Un piano seul se transcrit bien, un mix dense beaucoup moins. Pour la basse, sépare d'abord le morceau en pistes (onglet Pistes).</p>
+</div>
+
 <div class="panneau" id="panneauAnalyse">
   <div class="rangee" style="margin-bottom:10px">
     <label class="petit">Analyse</label>
@@ -1806,6 +1842,7 @@ const PANNEAUX = [
   ['panneauEffets',   'Effets',   true],
   ['panneauSpectre',  'Spectrogramme', true],
   ['panneauStereo',   'Stéréo',   true],
+  ['panneauTranscrire','Transcrire', false],
   ['panneauAnalyse',  'Analyse',  true],
   ['panneauRythme',   'Boîte à rythme', true],
   ['panneauMaquette', 'Maquette', true]
@@ -3998,7 +4035,166 @@ async function sonderServeur(){
   }
   return serveurOK;
 }
-const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'pistesIphone', 'exporterTranches',
+/* ================= TRANSCLASSES : l'écran =================
+   Le calcul (notes, accords, basse, analyse) tourne sur le Mac : outils/serveur-labz/musique/transcrire.py.
+   Ici on n'affiche que son résultat, calé sur la lecture du Labz : la vitesse (moteur en direct), la boucle
+   A-B et le solo des pistes s'appliquent donc tels quels. */
+const tc = { data: null, nom: '', dossier: '', raf: 0, suivi: 0 };
+function tcEtat(m, c){ const e = $('#tcEtat'); if(e){ e.textContent = m; e.className = 'etat' + (c ? ' ' + c : ''); } }
+function tcTemps(){ if(!buffer) return 0; return (enLecture ? positionCourante() : curseur) / buffer.sampleRate; }
+function tcCaler(c){   // ne retaille le canvas que si sa taille a changé (le faire à chaque image coûte cher)
+  const r = c.getBoundingClientRect(), d = dpr(), w = Math.max(1, Math.round(r.width*d)), h = Math.max(1, Math.round(r.height*d));
+  if(c.width !== w || c.height !== h){ c.width = w; c.height = h; }
+  return d;
+}
+function tcNomNote(m){ return NOTES_EN[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 2); }   // C3 = 60, comme le clavier
+async function tcOuvrir(){
+  await sonderServeur();
+  const nom = $('#fichier') ? $('#fichier').value : '';
+  if(!serveurOK){ tcEtat('Transcrire a besoin du Mac : ouvre le Labz depuis le Mac, ou son adresse sur le Wi-Fi.'); tcBoucle(); return; }
+  if(!nom){ tcEtat('Choisis d’abord un morceau (Source).'); tcBoucle(); return; }
+  if(tc.nom !== nom){ tc.data = null; tc.nom = nom; $('#tcFichiers').textContent = ''; $('#tcTon').textContent = '—'; $('#tcBpm').textContent = '—'; }
+  if(!tc.data){
+    try{
+      const s = await (await fetch('/api/transcription?f=' + encodeURIComponent(nom))).json();
+      if(s.actif && s.morceau === nom) tcSuivre();
+      else if(s.existe) await tcCharger(s.dossierMorceau);
+      else tcEtat('Pas encore transcrit. Compte 1 à 3 minutes pour un morceau de 5 minutes.');
+    }catch(x){ tcEtat('Le Mac ne répond pas.', 'mal'); }
+  }
+  tcBoucle();
+}
+async function tcCharger(dossier){
+  const r = await fetch('/audio/' + encodeURIComponent(dossier) + '/transcription.json', {cache: 'no-store'});
+  if(!r.ok){ tcEtat('Résultat introuvable sur le Mac.', 'mal'); return; }
+  tc.data = await r.json(); tc.dossier = dossier;
+  $('#tcTon').textContent = tc.data.tonalite ? tc.data.tonalite.nom : '?';
+  $('#tcBpm').textContent = tc.data.bpm ? tc.data.bpm + ' BPM' : '?';
+  const f = $('#tcFichiers'); f.textContent = '';
+  const liens = [['piano.mid', 'MIDI des notes'], ['analyse.md', 'Analyse']];
+  if(tc.data.basse && tc.data.basse.length) liens.push(['basse-tab.txt', 'Tab de basse'], ['basse.mid', 'MIDI de la basse']);
+  for(const [fic, t] of liens){
+    const a = document.createElement('a'); a.href = '/audio/' + encodeURIComponent(dossier) + '/' + encodeURIComponent(fic);
+    a.target = '_blank'; a.rel = 'noopener'; a.textContent = t; f.appendChild(a);
+  }
+  const nb = tc.data.basse ? tc.data.basse.length : 0;
+  tcEtat(tc.data.notes.length + ' notes · ' + tc.data.accords.length + ' accords · ' + (nb ? nb + ' notes de basse' : 'pas de basse séparée') + '. Hypothèses à vérifier.', 'ok');
+}
+function tcSuivre(){
+  clearInterval(tc.suivi);
+  const b = $('#transcrire'); if(b) b.disabled = true;
+  tc.suivi = setInterval(async () => {
+    try{
+      const s = await (await fetch('/api/transcription?f=' + encodeURIComponent(tc.nom))).json();
+      tcEtat('Transcription · ' + s.pct + ' % · ' + (s.texte || ''));
+      if(!s.actif){
+        clearInterval(tc.suivi); if(b) b.disabled = false;
+        if(s.erreur) tcEtat(s.erreur, 'mal'); else { tc.data = null; await tcCharger(s.dossierMorceau || s.dossier); }
+      }
+    }catch(x){ clearInterval(tc.suivi); if(b) b.disabled = false; tcEtat('Le Mac ne répond plus.', 'mal'); }
+  }, 800);
+}
+$('#transcrire').addEventListener('click', async () => {
+  const nom = $('#fichier').value;
+  if(!nom){ tcEtat('Choisis d’abord un morceau (Source).'); return; }
+  tc.nom = nom;
+  tcEtat('Envoi au Mac…');
+  try{
+    const r = await fetch('/api/transcrire', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({morceau: nom})});
+    const j = await r.json();
+    if(j.erreur){ tcEtat(j.erreur, 'mal'); return; }
+    tcSuivre();
+  }catch(x){ tcEtat('Le Mac ne répond pas.', 'mal'); }
+});
+$('#tcJouer').addEventListener('click', () => { const j = $('#jouer'); if(j) j.click(); });
+document.querySelectorAll('#tcVit button').forEach(b => b.addEventListener('click', () => {
+  poserReglage('vitesse', parseFloat(b.dataset.v));
+}));
+function tcBoucle(){
+  cancelAnimationFrame(tc.raf);
+  const f = () => { if(ecranCourant !== 'transcrire') return; try{ tcDessiner(); }catch(x){} tc.raf = requestAnimationFrame(f); };
+  f();
+}
+function tcClavier(lo, hi, W){
+  const blanche = m => [0,2,4,5,7,9,11].indexOf(((m % 12) + 12) % 12) >= 0;
+  const bl = []; for(let m = lo; m <= hi; m++) if(blanche(m)) bl.push(m);
+  const ww = W / Math.max(1, bl.length), pos = {};
+  bl.forEach((m, i) => pos[m] = {x: i*ww, w: ww, noire: false});
+  for(let m = lo; m <= hi; m++) if(!blanche(m) && pos[m-1]) pos[m] = {x: pos[m-1].x + ww*0.66, w: ww*0.68, noire: true};
+  return pos;
+}
+function tcDessiner(){
+  const t = tcTemps(), data = tc.data;
+  // ---- l'accord en cours ----
+  const acc = data ? data.accords : [];
+  let ia = -1; for(let i = 0; i < acc.length; i++){ if(acc[i].t0 <= t && t < acc[i].t1){ ia = i; break; } }
+  $('#tcAccord').textContent = ia >= 0 && acc[ia].nom ? acc[ia].nom : '—';
+  let suiv = ''; for(let i = ia + 1; i < acc.length; i++){ if(acc[i].nom){ suiv = '→ ' + acc[i].nom; break; } }
+  $('#tcSuivant').textContent = suiv;
+  // ---- le piano qui tombe ----
+  const c = $('#tcPiano'), d = tcCaler(c), g = c.getContext('2d'), W = c.width, H = c.height;
+  g.fillStyle = '#0b0d0c'; g.fillRect(0, 0, W, H);
+  if(!data || !data.notes.length){
+    g.fillStyle = '#7a8790'; g.font = (13*d) + 'px system-ui, sans-serif'; g.textAlign = 'center';
+    g.fillText(data ? 'Aucune note trouvée.' : 'Les notes tomberont ici.', W/2, H/2); g.textAlign = 'left';
+  }else{
+    let lo = 127, hi = 0; for(const n of data.notes){ if(n.p < lo) lo = n.p; if(n.p > hi) hi = n.p; }
+    lo = Math.max(21, lo - 2); hi = Math.min(108, hi + 2);
+    if(hi - lo < 24){ const m = (lo + hi) >> 1; lo = Math.max(21, m - 12); hi = Math.min(108, m + 12); }
+    const pos = tcClavier(lo, hi, W), kb = Math.round(H*0.15), haut = H - kb, L = 3.0;
+    g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1;
+    for(const b of (data.temps || [])){ if(b < t || b > t + L) continue; const y = haut - (b - t)/L*haut; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+    const actives = new Set();
+    g.font = '600 ' + (10*d) + 'px ui-monospace, Menlo, monospace'; g.textAlign = 'center';
+    for(const n of data.notes){
+      if(n.t1 < t - 0.05 || n.t0 > t + L) continue;
+      const k = pos[n.p]; if(!k) continue;
+      const y0 = Math.min(haut, haut - (n.t0 - t)/L*haut), y1 = Math.max(0, haut - (n.t1 - t)/L*haut);
+      const joue = n.t0 <= t && t < n.t1; if(joue) actives.add(n.p);
+      g.fillStyle = joue ? '#ffd27f' : (k.noire ? 'rgba(240,168,48,.75)' : 'rgba(240,168,48,.95)');
+      g.fillRect(k.x + 1*d, y1, Math.max(2, k.w - 2*d), Math.max(2, y0 - y1));
+      if(y0 - y1 > 14*d && k.w > 11*d){ g.fillStyle = '#241503'; g.fillText(tcNomNote(n.p), k.x + k.w/2, y0 - 4*d); }
+    }
+    g.textAlign = 'left';
+    for(let m = lo; m <= hi; m++){ const k = pos[m]; if(!k || k.noire) continue;
+      g.fillStyle = actives.has(m) ? '#f0a830' : '#ece9e0'; g.fillRect(k.x + 0.5, haut, k.w - 1, kb);
+      if(m % 12 === 0){ g.fillStyle = '#6b665c'; g.font = (9*d) + 'px ui-monospace, Menlo, monospace'; g.fillText(tcNomNote(m), k.x + 2*d, H - 4*d); } }
+    for(let m = lo; m <= hi; m++){ const k = pos[m]; if(!k || !k.noire) continue;
+      g.fillStyle = actives.has(m) ? '#c97a1e' : '#1d1c1a'; g.fillRect(k.x, haut, k.w, kb*0.62); }
+    g.fillStyle = '#f0a830'; g.fillRect(0, haut - 1*d, W, 2*d);
+  }
+  // ---- la basse sur les cordes ----
+  const ct = $('#tcTab'), dt = tcCaler(ct), gt = ct.getContext('2d'), w2 = ct.width, h2 = ct.height;
+  gt.fillStyle = '#0b0d0c'; gt.fillRect(0, 0, w2, h2);
+  const cordes = data && data.cordes && data.cordes.length ? data.cordes.slice().reverse() : ['G','D','A','E'];
+  const marge = 14*dt, pas = (h2 - 2*marge) / Math.max(1, cordes.length - 1), px = Math.round(w2*0.22), av = 4, ar = 1;
+  gt.font = '600 ' + (11*dt) + 'px ui-monospace, Menlo, monospace'; gt.textBaseline = 'middle';
+  cordes.forEach((nomC, i) => { const y = marge + i*pas; gt.strokeStyle = 'rgba(255,255,255,.22)'; gt.lineWidth = 1*dt;
+    gt.beginPath(); gt.moveTo(18*dt, y); gt.lineTo(w2, y); gt.stroke(); gt.fillStyle = '#7a8790'; gt.fillText(nomC, 4*dt, y); });
+  gt.strokeStyle = '#f0a830'; gt.lineWidth = 2*dt; gt.beginPath(); gt.moveTo(px, 4*dt); gt.lineTo(px, h2 - 4*dt); gt.stroke();
+  if(!data || !data.basse || !data.basse.length){
+    gt.fillStyle = '#7a8790'; gt.textAlign = 'center';
+    gt.fillText(data ? 'Pas de basse séparée : onglet Pistes, puis Transcrire à nouveau.' : 'La basse défilera ici, sur les cordes.', (w2 + px)/2, h2/2);
+    gt.textAlign = 'left';
+  }else{
+    const X = tt => tt >= t ? px + (tt - t)/av*(w2 - px) : px - (t - tt)/ar*px;
+    gt.textAlign = 'center';
+    for(const n of data.basse){
+      if(n.t1 < t - ar || n.t0 > t + av) continue;
+      const i = cordes.indexOf(n.corde); if(i < 0) continue;
+      const y = marge + i*pas, x0 = X(n.t0), x1 = X(n.t1), joue = n.t0 <= t && t < n.t1;
+      gt.strokeStyle = joue ? '#ffd27f' : 'rgba(111,183,255,.55)'; gt.lineWidth = 3*dt;
+      gt.beginPath(); gt.moveTo(x0, y); gt.lineTo(Math.max(x0, x1), y); gt.stroke();
+      const lab = String(n.case), bw = (lab.length*7 + 8)*dt;
+      gt.fillStyle = joue ? '#ffd27f' : '#6fb7ff'; gt.fillRect(x0 - bw/2, y - 8*dt, bw, 16*dt);
+      gt.fillStyle = '#0b0d0c'; gt.fillText(lab, x0, y + 0.5*dt);
+    }
+    gt.textAlign = 'left';
+  }
+  gt.textBaseline = 'alphabetic';
+}
+
+const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'pistesIphone', 'exporterTranches', 'transcrire',
                        'enregistrer', 'versAbleton'];   // projets : désormais gardés sur l'appareil, plus « (Mac) »
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
@@ -6969,6 +7165,7 @@ const ECRANS = [
   {id:'labo',     nom:'Labo',     panneaux:['panneauLabo']},
   {id:'effets',   nom:'Effets',   panneaux:['panneauEffets']},
   {id:'voir',     nom:'Voir',     panneaux:['panneauSpectre','panneauStereo']},
+  {id:'transcrire', nom:'Transcrire', panneaux:['panneauTranscrire']},
   {id:'analyse',  nom:'Analyse',  panneaux:['panneauAnalyse']},
   {id:'maquette', nom:'Maquette', panneaux:['panneauMaquette']},
   {id:'latence',  nom:'Latence',  panneaux:['panneauLatence']}
@@ -7005,6 +7202,7 @@ function montrerEcran(id){
     x.classList.toggle('on', x.dataset.e === e.id));
   window.scrollTo(0, 0);
   redessinerTout();
+  if(e.id === 'transcrire' && typeof tcOuvrir === 'function') tcOuvrir();
 }
 
 (function(){
@@ -8769,7 +8967,11 @@ function grilleFermer(){
        Le body devient fixe et exactement égal à l'écran ; seuls les panneaux défilent, à l'intérieur. */
     'html:has(body.tel){overflow:hidden;height:100%;overscroll-behavior:none}',
     'body.tel{position:fixed;inset:0;margin:0;overflow:hidden;box-sizing:border-box;padding-top:calc(env(safe-area-inset-top,0px) + 8px);padding-bottom:calc(64px + env(safe-area-inset-bottom,0px));gap:6px;overscroll-behavior:none}',   /* padding-top : la façade (cachée) portait la marge de la barre d'état, vu au simulateur */
-    'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
+    'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"],body.tel[data-ecran="transcrire"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
+    'body.tel[data-ecran="transcrire"] #barreTel{display:flex}',
+    'body.tel .tc-piano{height:34vh;min-height:180px}',
+    'body.tel .tc-tab{height:104px}',
+    'body.tel .tc-aide{display:none}',
     'body.tel.uneFonction{display:flex;flex-direction:column}',
     'body.tel .facade{display:none!important}',
     'body.tel .panneau.montre{overflow:auto;min-height:0;-webkit-overflow-scrolling:touch;margin:0 8px}',
@@ -8868,7 +9070,7 @@ function grilleFermer(){
   const tuiles = g.querySelector('.grille-tuiles');
   const ICONES = {tout:'▤', guide:'?', source:'▦', pistes:'≡', decouper:'✂', rythme:'▮',
                   jouer:'♪', labo:'⚛', effets:'≈', voir:'◎', analyse:'𝄞',
-                  maquette:'▤', latence:'⏱'};
+                  maquette:'▤', latence:'⏱', transcrire:'♫'};
   for(const e of ECRANS){
     if(e.tel) continue;   // déjà dans les onglets du bas
     const t = document.createElement('button');
