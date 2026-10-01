@@ -2529,12 +2529,10 @@ function zoneLecture(){
 
 function stopper(){
   idLecture++;                       // tout ce qui vient de l'ancienne lecture est périmé
-  // La tête ne suit le son qu'à travers suivre() (requestAnimationFrame), qui NE TOURNE PAS
-  // quand la page n'est pas rendue (écran verrouillé, app en arrière-plan — le son continue,
-  // demandé par David le 23.09). curseur peut alors être périmé de plusieurs secondes au
-  // moment du Stop : on le remet à jour ICI, avant de couper, sinon Lecture repart d'un
-  // endroit qui n'est plus le bon (trouvé par un agent le 24.09, plainte « pause/reprise »).
-  if(enLecture) curseur = positionCourante();
+  // PAS de mise à jour de curseur ici : jouer() appelle stopper() juste après qu'on a posé la
+  // tête au doigt, et la fin de lecture remet curseur au début de zone avant d'appeler stopper().
+  // Le build 1.2 (14) le faisait ici et écrasait la position posée (David 01.10 : « quand je
+  // clique avec mon doigt, il n'avance pas sur le morceau »). La synchro vit sur le bouton Stop.
   if(typeof arreterNavette === 'function') arreterNavette();
   toutFaireTaire();
   arreterDirect();
@@ -3831,7 +3829,10 @@ $('#sensiAuto').addEventListener('click', e => { e.target.classList.toggle('on')
 $('#versAbleton').addEventListener('click', ()=> exporterVers('ableton'));
 
 /* ---------- boutons ---------- */
-$('#jouer').addEventListener('click', ()=> enLecture ? stopper() : jouer());
+// Stop par l'utilisateur : la tête ne suit le son qu'à travers suivre() (requestAnimationFrame),
+// qui ne tourne pas écran verrouillé / app en arrière-plan (le son, lui, continue). On recale
+// donc la tête sur la vraie position AVANT de couper, sinon Lecture repart d'un endroit périmé.
+$('#jouer').addEventListener('click', ()=>{ if(enLecture){ curseur = positionCourante(); stopper(); majCompteurs(curseur); redessiner(); } else jouer(); });
 $('#debut').addEventListener('click', ()=> placerCurseur(sel.fin>sel.debut ? sel.debut : 0, true));
 $('#fin').addEventListener('click', ()=>{ if(buffer) placerCurseur(buffer.length-1, false), stopper(); });
 $('#reculer').addEventListener('click', ()=>{ if(buffer) placerCurseur(curseur - buffer.sampleRate, true); });
