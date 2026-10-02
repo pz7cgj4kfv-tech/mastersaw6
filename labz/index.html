@@ -147,8 +147,19 @@ button.presse{ background:var(--ambre-vif) !important; color:#241503 !important;
 .tc-accord{ margin-left:auto; display:flex; align-items:baseline; gap:10px }
 .tc-accord b{ font-size:30px; line-height:1; color:var(--ambre-vif); font-variant-numeric:tabular-nums }
 .tc-accord span{ font-size:13px; opacity:.7 }
+.lien-rangee{ flex-wrap:wrap }
+.lien-case{ flex:1 1 240px; min-width:0 }
 .tc-piano{ display:block; width:100%; height:46vh; min-height:220px; border-radius:6px; background:#0b0d0c; touch-action:manipulation }
 .tc-tab{ display:block; width:100%; height:128px; margin-top:8px; border-radius:6px; background:#0b0d0c }
+.tc-onde{ display:block; width:100%; height:64px; border-radius:6px; background:#0b0d0c; cursor:pointer; touch-action:none }
+.tc-transport{ gap:8px; margin:8px 0; flex-wrap:wrap }
+.tc-transport .compteur{ margin-left:auto }
+.tc-piano{ cursor:pointer }
+.tc-batt{ display:block; width:100%; height:96px; margin-top:8px; border-radius:6px; background:#0b0d0c }
+.tc-legende{ display:flex; flex-wrap:wrap; gap:6px; margin:0 0 8px }
+.tc-legende button{ padding:4px 10px 4px 8px; font-size:12px; display:inline-flex; align-items:center; gap:6px }
+.tc-legende button i{ width:10px; height:10px; border-radius:2px; display:inline-block; background:var(--c) }
+.tc-legende button.cache{ opacity:.4; text-decoration:line-through }
 .tc-vit{ display:inline-flex; align-items:center; gap:4px }
 .tc-vit button{ min-width:38px; padding-left:8px; padding-right:8px }
 .tc-fichiers{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px }
@@ -1303,6 +1314,12 @@ body.tel .modele{ font-size:8.5px }
     <input type="file" id="fichierEntree" accept="audio/*,video/*,.wav,.aif,.aiff,.mp3,.m4a,.flac,.mov,.mp4,.m4v" multiple hidden>
     <span id="infos" class="etat"></span>
   </div>
+  <div class="rangee lien-rangee" style="margin-top:10px">
+    <label class="petit" for="lien">Lien</label>
+    <input type="text" inputmode="url" id="lien" class="lien-case" placeholder="colle un lien YouTube, SoundCloud, Bandcamp…" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="importerLien">Importer le lien</button>
+    <span id="etatLien" class="etat"></span>
+  </div>
   <div class="rangee" style="margin-top:10px">
     <label class="petit" for="projet">Projet</label>
     <select id="projet"><option value="">aucun</option></select>
@@ -1668,20 +1685,40 @@ body.tel .modele{ font-size:8.5px }
 <div class="panneau" id="panneauTranscrire">
   <!-- TRANSCLASSES (David 01.10.2026) : « un programme comme Reprise, simple, qui marche direct », plus
        la basse sur le manche et l'analyse à sa façon. Le calcul tourne sur le Mac (serveur du Labz). -->
+  <div class="rangee lien-rangee" style="margin-bottom:8px">
+    <input type="text" inputmode="url" id="tcLien" class="lien-case" placeholder="colle un lien (YouTube…) : il est importé puis transcrit" autocomplete="off" autocapitalize="off" spellcheck="false">
+    <button id="tcImporterLien">Importer et transcrire</button>
+  </div>
   <div class="rangee" style="margin-bottom:8px">
     <button id="transcrire" class="primaire">Transcrire ce morceau</button>
-    <button id="tcJouer">▶ Lecture</button>
+    <button id="tcVersNuage" title="Copier la transcription et le son dans iCloud Drive › Transient Labz › Transcriptions">→ iCloud</button>
+    <button id="tcOuvrirNuage" title="Ouvrir un fichier .labz.json (iCloud Drive › Transient Labz › Transcriptions)">Ouvrir depuis Fichiers</button>
+    <input type="file" id="tcFichierNuage" accept=".json,application/json" hidden>
+    <span id="tcEtat" class="etat"></span>
+  </div>
+  <!-- David 02.10 : « je dois pouvoir mettre pause, mettre en boucle, revenir en arrière, je dois voir la forme
+       d'onde du morceau ». Tout passe par la lecture du Labz : la boucle, c'est la sélection. -->
+  <canvas id="tcOnde" class="tc-onde" title="Clic : aller là · Glisser : choisir la boucle"></canvas>
+  <div class="rangee tc-transport">
+    <button id="tcDebut" title="Début (de la boucle s'il y en a une)">|◀</button>
+    <button id="tcRecul" title="Reculer de 5 s">◀◀ 5 s</button>
+    <button id="tcJouer" class="lecture">▶ Lecture</button>
+    <button id="tcAvance" title="Avancer de 5 s">5 s ▶▶</button>
+    <button id="tcBoucle" title="Boucler sur la zone choisie en glissant sur l'onde">Boucle</button>
+    <button id="tcSansBoucle" title="Oublier la zone de boucle">Effacer la boucle</button>
     <span class="tc-vit" id="tcVit"><span class="petit">Vitesse</span>
       <button data-v="0.25">¼</button><button data-v="0.5">½</button><button data-v="0.75">¾</button><button data-v="1">1</button></span>
-    <span id="tcEtat" class="etat"></span>
+    <span class="compteur" id="tcTemps">0:00.0</span>
   </div>
   <div class="tc-infos">
     <span class="tc-cle">Tonalité <b id="tcTon">—</b></span>
     <span class="tc-cle">Tempo <b id="tcBpm">—</b></span>
     <span class="tc-accord"><b id="tcAccord">—</b><span id="tcSuivant"></span></span>
   </div>
+  <div class="tc-legende" id="tcLegende"></div>
   <canvas id="tcPiano" class="tc-piano"></canvas>
   <canvas id="tcTab" class="tc-tab"></canvas>
+  <canvas id="tcBatt" class="tc-batt"></canvas>
   <div class="tc-fichiers" id="tcFichiers"></div>
   <p class="aide tc-aide">Tout ce qui sort est une hypothèse d'oreille : les notes, les accords, et surtout la place des notes sur le manche.
     Un piano seul se transcrit bien, un mix dense beaucoup moins. Pour la basse, sépare d'abord le morceau en pistes (onglet Pistes).</p>
@@ -2602,18 +2639,24 @@ async function jouer(){
   gainNode.gain.value = parseFloat($('#volume').value);
   source.connect(gainNode).connect(a.destination);
   const boucler = z.boucle && $('#boucle').classList.contains('on');
+  // REPRISE dans une boucle (David 02.10 : « je dois pouvoir mettre pause, mettre en boucle »). Avant, une pause
+  // au milieu d'une sélection faisait repartir la relecture du DÉBUT de la sélection. On repart de la tête,
+  // et c'est seulement au tour suivant que la boucle revient à son début.
+  const reprise = z.boucle && curseur > z.d + 1 && curseur < z.f - 1 ? Math.round(curseur - z.d) : 0;
   if(!reglagesNeutres()){
     // EN DIRECT : vitesse et hauteur sur toute la zone, quelle que soit sa durée.
     const g = reglagesDirect();
     const canaux = []; for(let c=0;c<buffer.numberOfChannels;c++) canaux.push(buffer.getChannelData(c));
     moteur = new MoteurDirect(canaux, buffer.sampleRate, z.d, z.f, boucler);
     moteur.regler(g.alpha, g.r);
+    if(reprise){ moteur.posA = reprise; moteur.avance = reprise; }
     noeudDirect = a.createScriptProcessor(4096, 1, buffer.numberOfChannels);
     silenceDirect = a.createConstantSource(); silenceDirect.offset.value = 0;
     silenceDirect.connect(noeudDirect); silenceDirect.start();   // Safari veut une entrée pour cadencer le nœud
     const m = moteur;
     noeudDirect.onaudioprocess = ev => {
       const outs = []; for(let c=0;c<ev.outputBuffer.numberOfChannels;c++) outs.push(ev.outputBuffer.getChannelData(c));
+      m.marquer(typeof ev.playbackTime === 'number' && ev.playbackTime > 0 ? ev.playbackTime : a.currentTime);
       m.tirer(outs, ev.outputBuffer.length);
       if(m.termine && mien === idLecture && moteur === m){
         setTimeout(() => { if(mien !== idLecture) return; curseur = z.d; stopper(); majCompteurs(curseur); redessiner(); }, 0);
@@ -2646,7 +2689,9 @@ async function jouer(){
     source.playbackRate.value = tauxSource;
     d = z.d/buffer.sampleRate; f = z.f/buffer.sampleRate;
     if(boucler){ source.loop = true; source.loopStart = d; source.loopEnd = f; }
-    source.start(0, d, boucler ? undefined : Math.max(0.002, f - d));
+    const r0 = reprise/buffer.sampleRate;
+    source.start(0, d + r0, boucler ? undefined : Math.max(0.002, f - d - r0));
+    d += r0;   // posDepart : la position suit depuis le point de reprise
   }
   tDepart = a.currentTime; posDepart = d;
   enLecture = true;
@@ -2666,7 +2711,7 @@ async function jouer(){
 function positionCourante(){
   if(!buffer) return curseur;
   if(!enLecture) return curseur;
-  if(moteur) return Math.max(0, Math.min(buffer.length, moteur.position()));
+  if(moteur) return Math.max(0, Math.min(buffer.length, moteur.position(audio().currentTime)));
   const a = audio();
   const vit = tauxSource;   // pas $('#vitesse').value : elle peut avoir changé avant que jouer() ne redémarre
   const z = zoneLecture();
@@ -3254,8 +3299,27 @@ class MoteurDirect {
       this.avance += r/this.alpha;
     }
   }
-  position(){
-    const a = this.boucle && this.n > 0 ? this.avance % this.n : Math.min(this.n, this.avance);
+  // La tête lisse (David 01.10 : « les basses, ça saccade trop »). this.avance ne bouge que par paquets de
+  // 4096 échantillons (~85 ms) : la ligne de basse et le piano sautaient d'un cran à chaque paquet. Chaque
+  // paquet note l'instant où il SERA joué (playbackTime) et la position à ce moment ; la tête est interpolée
+  // entre deux repères, donc continue, et calée sur ce qu'on entend plutôt qu'un paquet en avance.
+  marquer(quand){
+    const r = this.reperes || (this.reperes = []);
+    r.push({t: quand, av: this.avance}); if(r.length > 6) r.shift();
+  }
+  position(maintenant){
+    let av = this.avance;
+    const r = this.reperes;
+    if(maintenant != null && r && r.length){
+      if(maintenant <= r[0].t) av = r[0].av;
+      else{
+        let i = r.length - 1; while(i > 0 && r[i].t > maintenant) i--;
+        const a = r[i], b = r[i + 1];
+        if(b && b.t > a.t) av = a.av + (b.av - a.av) * (maintenant - a.t) / (b.t - a.t);
+        else av = Math.min(this.avance, a.av + (maintenant - a.t) * this.sr * this.r / this.alpha);
+      }
+    }
+    const a = this.boucle && this.n > 0 ? av % this.n : Math.min(this.n, av);
     return this.d0 + a;
   }
 }
@@ -3957,7 +4021,7 @@ document.addEventListener('keydown', e => {
   const fin = (vue.fin - vue.debut);
   const pas = e.shiftKey ? Math.max(1, Math.round(fin/200)) : Math.round(buffer.sampleRate/10);
   switch(e.code){
-    case 'Space':      e.preventDefault(); enLecture ? stopper() : jouer(); break;
+    case 'Space':      e.preventDefault(); $('#jouer').click(); break;   // même chemin que le bouton : vraie pause
     case 'ArrowLeft':  e.preventDefault(); placerCurseur(curseur - pas, false, true); break;
     case 'ArrowRight': e.preventDefault(); placerCurseur(curseur + pas, false, true); break;
     case 'Home':       e.preventDefault(); placerCurseur(0, false); break;
@@ -4039,7 +4103,11 @@ async function sonderServeur(){
    Le calcul (notes, accords, basse, analyse) tourne sur le Mac : outils/serveur-labz/musique/transcrire.py.
    Ici on n'affiche que son résultat, calé sur la lecture du Labz : la vitesse (moteur en direct), la boucle
    A-B et le solo des pistes s'appliquent donc tels quels. */
-const tc = { data: null, nom: '', dossier: '', raf: 0, suivi: 0 };
+const tc = { data: null, nom: '', dossier: '', raf: 0, suivi: 0, cache: new Set(), pistes: null };
+// Une couleur par instrument (David 02.10 : « des couleurs différentes entre le piano, la basse, la guitare »).
+// L'instrument vient de la PISTE séparée où la note a été trouvée, pas d'une reconnaissance de timbre.
+const TC_COULEUR = {piano:'#f0a830', guitare:'#5ccf8e', autre:'#b892ff', voix:'#ff8fb1', mix:'#f0a830', basse:'#6fb7ff', batterie:'#ff6a4d'};
+const TC_FUTS = [['cymbales','Cymb.','#9ad7e8'], ['toms','Toms','#d39b6a'], ['caisse','Caisse','#ffd166'], ['kick','Kick','#ff6a4d']];
 function tcEtat(m, c){ const e = $('#tcEtat'); if(e){ e.textContent = m; e.className = 'etat' + (c ? ' ' + c : ''); } }
 function tcTemps(){ if(!buffer) return 0; return (enLecture ? positionCourante() : curseur) / buffer.sampleRate; }
 function tcCaler(c){   // ne retaille le canvas que si sa taille a changé (le faire à chaque image coûte cher)
@@ -4051,14 +4119,18 @@ function tcNomNote(m){ return NOTES_EN[((m % 12) + 12) % 12] + (Math.floor(m / 1
 async function tcOuvrir(){
   await sonderServeur();
   const nom = $('#fichier') ? $('#fichier').value : '';
-  if(!serveurOK){ tcEtat('Transcrire a besoin du Mac : ouvre le Labz depuis le Mac, ou son adresse sur le Wi-Fi.'); tcBoucle(); return; }
-  if(!nom){ tcEtat('Choisis d’abord un morceau (Source).'); tcBoucle(); return; }
+  const SANS_MAC = 'Sans le Mac : « Ouvrir depuis Fichiers », puis iCloud Drive › Transient Labz › Transcriptions.';
+  if(!nom){ tcEtat(serveurOK ? 'Choisis d’abord un morceau (Source).' : SANS_MAC); tcBoucle(); return; }
   if(tc.nom !== nom){ tc.data = null; tc.nom = nom; $('#tcFichiers').textContent = ''; $('#tcTon').textContent = '—'; $('#tcBpm').textContent = '—'; }
   if(!tc.data){
-    try{
+    const garde = await BDD.projet('tc:' + nom);   // une transcription ouverte depuis iCloud, gardée sur l'appareil
+    if(!serveurOK){ if(garde) tcAfficher(garde, null); else tcEtat(SANS_MAC); }
+    else try{
       const s = await (await fetch('/api/transcription?f=' + encodeURIComponent(nom))).json();
+      tc.pistes = s;
       if(s.actif && s.morceau === nom) tcSuivre();
       else if(s.existe) await tcCharger(s.dossierMorceau);
+      else if(garde) tcAfficher(garde, null);
       else tcEtat('Pas encore transcrit. Compte 1 à 3 minutes pour un morceau de 5 minutes.');
     }catch(x){ tcEtat('Le Mac ne répond pas.', 'mal'); }
   }
@@ -4067,18 +4139,86 @@ async function tcOuvrir(){
 async function tcCharger(dossier){
   const r = await fetch('/audio/' + encodeURIComponent(dossier) + '/transcription.json', {cache: 'no-store'});
   if(!r.ok){ tcEtat('Résultat introuvable sur le Mac.', 'mal'); return; }
-  tc.data = await r.json(); tc.dossier = dossier;
+  tcAfficher(await r.json(), dossier);
+}
+// Affiche une transcription, qu'elle vienne du Mac (dossier = où sont ses fichiers) ou d'iCloud (dossier = null).
+function tcAfficher(data, dossier){
+  tc.data = data; tc.dossier = dossier;
   $('#tcTon').textContent = tc.data.tonalite ? tc.data.tonalite.nom : '?';
   $('#tcBpm').textContent = tc.data.bpm ? tc.data.bpm + ' BPM' : '?';
   const f = $('#tcFichiers'); f.textContent = '';
-  const liens = [['piano.mid', 'MIDI des notes'], ['analyse.md', 'Analyse']];
-  if(tc.data.basse && tc.data.basse.length) liens.push(['basse-tab.txt', 'Tab de basse'], ['basse.mid', 'MIDI de la basse']);
+  let liens = tc.data.fichiers;   // version 2 : la liste vient du Mac
+  if(!liens){ liens = [['piano.mid', 'MIDI des notes'], ['analyse.md', 'Analyse']];
+    if(tc.data.basse && tc.data.basse.length) liens.push(['basse-tab.txt', 'Tab de basse'], ['basse.mid', 'MIDI de la basse']); }
+  tcLegende();
+  if(!dossier) liens = [];   // venue d'iCloud : les MIDI et la tab sont dans le dossier du morceau, dans Fichiers
   for(const [fic, t] of liens){
     const a = document.createElement('a'); a.href = '/audio/' + encodeURIComponent(dossier) + '/' + encodeURIComponent(fic);
     a.target = '_blank'; a.rel = 'noopener'; a.textContent = t; f.appendChild(a);
   }
-  const nb = tc.data.basse ? tc.data.basse.length : 0;
-  tcEtat(tc.data.notes.length + ' notes · ' + tc.data.accords.length + ' accords · ' + (nb ? nb + ' notes de basse' : 'pas de basse séparée') + '. Hypothèses à vérifier.', 'ok');
+  const nb = tc.data.basse ? tc.data.basse.length : 0, nf = tc.data.batterie ? tc.data.batterie.length : 0;
+  tcEtat(tc.data.notes.length + ' notes · ' + tc.data.accords.length + ' accords · ' + (nb ? nb + ' notes de basse' : 'pas de basse séparée')
+    + (nf ? ' · ' + nf + ' frappes' : '') + '. Hypothèses à vérifier.', 'ok');
+}
+// ---- LE NUAGE (David 02.10) : ouvrir une transcription déposée par le Mac dans iCloud Drive ----
+// Un seul fichier « <morceau>.labz.json » : la transcription ET le son (AAC). Gardé ensuite sur l'appareil.
+async function tcOuvrirPaquet(f){
+  tcEtat('Lecture de ' + f.name + '…');
+  const texte = await f.text();
+  if(!texte){ tcEtat(f.name + ' est vide : pas encore téléchargé depuis iCloud ? Ouvre-le d’abord dans Fichiers.', 'mal'); return; }
+  let p; try{ p = JSON.parse(texte); }catch(x){ p = null; }
+  if(!p || !p.transcription){ tcEtat('Ce n’est pas une transcription du Labz (il faut un fichier .labz.json).', 'mal'); return; }
+  const nom = p.audio && p.audio.nom ? p.audio.nom : p.morceau;
+  if(p.audio && p.audio.base64){
+    const bin = atob(p.audio.base64), u = new Uint8Array(bin.length);
+    for(let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+    LOCAL.set(nom, u.buffer); BDD.garder(nom, u.buffer);
+  }
+  await BDD.gardeProjet('tc:' + nom, p.transcription);
+  await listerFichiers();
+  const sl = $('#fichier');
+  if(![...sl.options].some(o => o.value === nom)){ const o = document.createElement('option'); o.value = nom; o.textContent = nom + ' (iCloud)'; sl.appendChild(o); }
+  sl.value = nom;
+  if(p.audio) await charger(nom);
+  tc.nom = nom; tc.data = null;
+  tcAfficher(p.transcription, null);
+  tcBoucle();
+}
+$('#tcOuvrirNuage').addEventListener('click', () => $('#tcFichierNuage').click());
+$('#tcFichierNuage').addEventListener('change', async e => {
+  const f = e.target.files && e.target.files[0]; e.target.value = '';
+  if(f) try{ await tcOuvrirPaquet(f); }catch(x){ tcEtat('Ouverture ratée : ' + ((x && x.message) || x), 'mal'); }
+});
+$('#tcVersNuage').addEventListener('click', async () => {
+  const nom = $('#fichier').value; if(!nom) return;
+  tcEtat('Copie dans iCloud…');
+  try{
+    const j = await (await fetch('/api/publier-nuage', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({morceau: nom})})).json();
+    tcEtat(j.erreur ? 'Pas dans iCloud : ' + j.erreur : 'Transcription ' + j.texte, j.erreur ? 'mal' : 'ok');
+  }catch(x){ tcEtat('Le Mac ne répond pas.', 'mal'); }
+});
+function tcLegende(){
+  const L = $('#tcLegende'); if(!L) return; L.textContent = '';
+  const d = tc.data; if(!d) return;
+  const items = [];
+  for(const i of (d.instruments || [{cle:'mix', nom:'Notes', notes: d.notes.length}])){
+    if(i.absent || !i.notes) continue;
+    items.push([i.cle, i.nom.split(' (')[0], i.notes]);
+  }
+  if(d.basse && d.basse.length) items.push(['basse', 'Basse', d.basse.length]);
+  if(d.batterie && d.batterie.length) items.push(['batterie', 'Batterie', d.batterie.length]);
+  for(const [cle, nom, n] of items){
+    const b = document.createElement('button');
+    b.style.setProperty('--c', TC_COULEUR[cle] || '#ccc');
+    b.innerHTML = '<i></i>'; b.appendChild(document.createTextNode(nom + ' · ' + n));
+    b.title = 'Montrer ou cacher';
+    b.classList.toggle('cache', tc.cache.has(cle));
+    b.addEventListener('click', () => { tc.cache.has(cle) ? tc.cache.delete(cle) : tc.cache.add(cle); b.classList.toggle('cache', tc.cache.has(cle)); });
+    L.appendChild(b);
+  }
+  const absents = (d.instruments || []).filter(i => i.absent).map(i => i.nom.split(' (')[0].toLowerCase());
+  if(absents.length){ const sp = document.createElement('span'); sp.className = 'etat'; sp.textContent = 'absent du morceau : ' + absents.join(', '); L.appendChild(sp); }
+  if(!d.instruments){ const sp = document.createElement('span'); sp.className = 'etat'; sp.textContent = 'transcription d’avant les couleurs : relance Transcrire pour avoir les instruments et la batterie'; L.appendChild(sp); }
 }
 function tcSuivre(){
   clearInterval(tc.suivi);
@@ -4094,19 +4234,181 @@ function tcSuivre(){
     }catch(x){ clearInterval(tc.suivi); if(b) b.disabled = false; tcEtat('Le Mac ne répond plus.', 'mal'); }
   }, 800);
 }
-$('#transcrire').addEventListener('click', async () => {
-  const nom = $('#fichier').value;
-  if(!nom){ tcEtat('Choisis d’abord un morceau (Source).'); return; }
+// preparer : sépare en 6 pistes et éclate la batterie si c'est encore à faire (couleurs par instrument + batterie).
+// Sans le demander pour un morceau qui a déjà des pistes : ça remplace ses 4 pistes par 6 et range la batterie
+// entière dans un sous-dossier, donc on pose la question. Un morceau venu d'un lien, lui, n'a rien à perdre.
+async function tcLancer(nom, preparer){
   tc.nom = nom;
+  if(preparer === undefined){
+    let e = tc.pistes;
+    try{ e = await (await fetch('/api/transcription?f=' + encodeURIComponent(nom), {cache:'no-store'})).json(); }catch(x){}
+    const manque = e && (!e.six || (!e.futs && e.modeleBatterie));
+    preparer = false;
+    if(manque){
+      const quoi = !e.six ? (e.pistes ? 'séparer le morceau en 6 pistes (ses pistes actuelles seront remplacées)' : 'séparer le morceau en 6 pistes')
+                          : 'éclater la batterie en kick, caisse claire, toms, cymbales';
+      preparer = confirm('Pour avoir une couleur par instrument et la batterie, il faut d’abord ' + quoi + '. Compte 2 à 4 minutes de plus.\n\nOK : préparer puis transcrire.\nAnnuler : transcrire tel quel.');
+    }
+  }
   tcEtat('Envoi au Mac…');
   try{
-    const r = await fetch('/api/transcrire', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({morceau: nom})});
+    const r = await fetch('/api/transcrire', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({morceau: nom, preparer})});
     const j = await r.json();
     if(j.erreur){ tcEtat(j.erreur, 'mal'); return; }
     tcSuivre();
   }catch(x){ tcEtat('Le Mac ne répond pas.', 'mal'); }
+}
+$('#transcrire').addEventListener('click', () => {
+  const nom = $('#fichier').value;
+  if(!nom){ tcEtat('Choisis d’abord un morceau (Source).'); return; }
+  tcLancer(nom);
 });
-$('#tcJouer').addEventListener('click', () => { const j = $('#jouer'); if(j) j.click(); });
+// IMPORT PAR LIEN (David 01.10 : « que je puisse copier le lien comme eux, un lien YouTube »). Le Mac
+// télécharge le son (yt-dlp), le range avec les autres morceaux, et la page l'ouvre. Pas dans l'app seule.
+async function importerLien(lien, etat){
+  lien = (lien || '').trim();
+  if(!/^https?:\/\/\S+$/.test(lien)){ etat('Colle un lien complet, qui commence par https://', 'mal'); return null; }
+  await sonderServeur();
+  if(!serveurOK){ etat('Le lien a besoin du Mac : ouvre le Labz depuis le Mac, ou son adresse sur le Wi-Fi.', 'mal'); return null; }
+  etat('Envoi du lien au Mac…');
+  let j;
+  try{
+    j = await (await fetch('/api/importer-lien', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({lien})})).json();
+  }catch(x){ etat('Le Mac ne répond pas.', 'mal'); return null; }
+  if(j.erreur){ etat(j.erreur, 'mal'); return null; }
+  return await new Promise(fin => {
+    const t = setInterval(async () => {
+      try{
+        const s = await (await fetch('/api/telechargement', {cache: 'no-store'})).json();
+        if(s.actif){ etat('Lien · ' + s.pct + ' % · ' + (s.texte || '')); return; }
+        clearInterval(t);
+        if(s.erreur || !s.nom){ etat(s.erreur || 'rien n’a été téléchargé', 'mal'); fin(null); return; }
+        etat('Ouverture de ' + s.nom + '…');
+        await listerFichiers();
+        $('#fichier').value = s.nom;
+        await charger(s.nom);
+        etat(s.nom + ' · importé', 'ok');
+        fin(s.nom);
+      }catch(x){ clearInterval(t); etat('Le Mac ne répond plus.', 'mal'); fin(null); }
+    }, 700);
+  });
+}
+function etatLien(m, c){ const e = $('#etatLien'); if(e){ e.textContent = m; e.className = 'etat' + (c ? ' ' + c : ''); } }
+async function lienSource(){
+  const b = $('#importerLien'); b.disabled = true;
+  try{ if(await importerLien($('#lien').value, etatLien)) $('#lien').value = ''; }
+  finally{ b.disabled = false; }
+}
+async function lienTranscrire(){
+  const b = $('#tcImporterLien'); b.disabled = true;
+  try{
+    const nom = await importerLien($('#tcLien').value, tcEtat);
+    if(nom){ $('#tcLien').value = ''; tc.data = null; tcLancer(nom, true); }
+  }finally{ b.disabled = false; }
+}
+$('#importerLien').addEventListener('click', lienSource);
+$('#tcImporterLien').addEventListener('click', lienTranscrire);
+$('#lien').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); lienSource(); } });
+$('#tcLien').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); lienTranscrire(); } });
+// ---- transport de l'écran Transcrire : les mêmes mécanismes que l'écran Onde ----
+function tcSauter(sec){ if(!buffer) return; const p = enLecture ? positionCourante() : curseur; placerCurseur(p + sec*buffer.sampleRate, true); }
+$('#tcJouer').addEventListener('click', () => $('#jouer').click());
+$('#tcDebut').addEventListener('click', () => $('#debut').click());
+$('#tcRecul').addEventListener('click', () => tcSauter(-5));
+$('#tcAvance').addEventListener('click', () => tcSauter(5));
+$('#tcBoucle').addEventListener('click', () => {
+  $('#boucle').click();
+  if(!(sel.fin - sel.debut > 1)) tcEtat('Glisse sur l’onde pour choisir la zone à boucler.');
+});
+$('#tcSansBoucle').addEventListener('click', () => $('#selVide').click());
+// ---- la forme d'onde du morceau entier : clic = aller là, glisser = choisir la boucle ----
+function tcPics(){
+  if(!buffer) return null;
+  if(tc.pics && tc.pics.buf === buffer) return tc.pics;
+  const n = 1600, mins = new Float32Array(n), maxs = new Float32Array(n), L = buffer.length, nc = buffer.numberOfChannels;
+  const ch = []; for(let c = 0; c < nc; c++) ch.push(buffer.getChannelData(c));
+  for(let i = 0; i < n; i++){
+    const a = Math.floor(i*L/n), b = Math.floor((i+1)*L/n), pas = Math.max(1, Math.floor((b - a)/256));
+    let lo = 0, hi = 0;
+    for(let j = a; j < b; j += pas){ let v = 0; for(let c = 0; c < nc; c++) v += ch[c][j]; v /= nc; if(v < lo) lo = v; if(v > hi) hi = v; }
+    mins[i] = lo; maxs[i] = hi;
+  }
+  return (tc.pics = {buf: buffer, mins, maxs, n});
+}
+function tcDessinerOnde(t){
+  const c = $('#tcOnde'); if(!c) return;
+  const d = tcCaler(c), g = c.getContext('2d'), W = c.width, H = c.height;
+  g.fillStyle = '#0b0d0c'; g.fillRect(0, 0, W, H);
+  const P = tcPics(); if(!P) return;
+  const dur = buffer.duration, xt = t/dur*W, mi = H/2;
+  if(sel.fin - sel.debut > 1){
+    const x0 = sel.debut/buffer.length*W, x1 = sel.fin/buffer.length*W, on = $('#boucle').classList.contains('on');
+    g.fillStyle = on ? 'rgba(240,168,48,.22)' : 'rgba(255,255,255,.08)'; g.fillRect(x0, 0, x1 - x0, H);
+    g.fillStyle = on ? '#f0a830' : '#7a8790'; g.fillRect(x0, 0, 2*d, H); g.fillRect(x1 - 2*d, 0, 2*d, H);
+  }
+  for(let x = 0; x < W; x++){
+    const i = Math.min(P.n - 1, Math.floor(x/W*P.n));
+    g.fillStyle = x < xt ? '#c9a46a' : '#5d6870';
+    const y0 = mi - P.maxs[i]*mi*0.95, y1 = mi - P.mins[i]*mi*0.95;
+    g.fillRect(x, y0, 1, Math.max(1, y1 - y0));
+  }
+  g.fillStyle = '#ffd27f'; g.fillRect(xt - 1*d, 0, 2*d, H);
+  const mmss = s2 => Math.floor(s2/60) + ':' + (s2 % 60).toFixed(1).padStart(4, '0');
+  const e = $('#tcTemps'); if(e) e.textContent = mmss(t) + ' / ' + mmss(dur);
+  const j = $('#tcJouer'); if(j){ const txt = enLecture ? '❚❚ Pause' : '▶ Lecture'; if(j.textContent !== txt) j.textContent = txt; j.classList.toggle('on', enLecture); }
+  const b = $('#tcBoucle'); if(b) b.classList.toggle('on', $('#boucle').classList.contains('on'));
+}
+(function(){
+  const c = $('#tcOnde'); if(!c) return;
+  let x0 = null, glisse = false;
+  const ech = ev => { const r = c.getBoundingClientRect(); return Math.max(0, Math.min(1, (ev.clientX - r.left)/r.width)) * buffer.length; };
+  c.addEventListener('pointerdown', ev => { if(!buffer) return; x0 = ev.clientX; glisse = false; c.setPointerCapture(ev.pointerId); tc.dep = ech(ev); });
+  c.addEventListener('pointermove', ev => {
+    if(x0 === null || !buffer) return;
+    if(Math.abs(ev.clientX - x0) > 4) glisse = true;
+    if(glisse){ const a = tc.dep, b = ech(ev); sel = {debut: Math.round(Math.min(a, b)), fin: Math.round(Math.max(a, b))}; if(!enLecture) tcDessiner(); }
+  });
+  c.addEventListener('pointerup', ev => {
+    if(x0 === null || !buffer) return; x0 = null;
+    if(!glisse){ placerCurseur(ech(ev), true); if(!enLecture) tcDessiner(); return; }
+    // une zone vient d'être choisie : la boucle s'allume et la lecture y part
+    if(!$('#boucle').classList.contains('on')) $('#boucle').classList.add('on');
+    curseur = sel.debut; majCompteurs(curseur); redessiner();
+    if(typeof preparerTraitement === 'function') preparerTraitement();
+    if(enLecture) jouer(); else tcDessiner();
+  });
+})();
+// ---- le piano : toucher une touche (ou une note qui tombe) la fait entendre (David 02.10) ----
+function tcSonner(p, duree){
+  duree = duree || 1.4;
+  const a = audio(); if(a.state !== 'running') a.resume();
+  const f = 440*Math.pow(2, (p - 69)/12), t0 = a.currentTime + 0.005;
+  const env = a.createGain(), filtre = a.createBiquadFilter();
+  env.gain.setValueAtTime(0.0001, t0); env.gain.exponentialRampToValueAtTime(0.3, t0 + 0.006);
+  env.gain.exponentialRampToValueAtTime(0.0001, t0 + duree);
+  filtre.type = 'lowpass'; filtre.frequency.setValueAtTime(Math.min(12000, f*8), t0);
+  filtre.frequency.exponentialRampToValueAtTime(Math.max(300, f*1.5), t0 + duree);
+  for(const [h, type, amp] of [[1, 'triangle', 1], [2, 'sine', 0.3], [3, 'sine', 0.1]]){
+    const o = a.createOscillator(), gg = a.createGain(); o.type = type; o.frequency.value = f*h; gg.gain.value = amp;
+    o.connect(gg).connect(filtre); o.start(t0); o.stop(t0 + duree + 0.05);
+  }
+  filtre.connect(env).connect(a.destination);
+  tc.touche = {p, jusqua: performance.now() + 600};
+  if(!enLecture) tcDessiner();
+}
+$('#tcPiano').addEventListener('pointerdown', ev => {
+  const G = tc.geo; if(!G) return;
+  const c = $('#tcPiano'), r = c.getBoundingClientRect();
+  const x = (ev.clientX - r.left)/r.width*c.width, y = (ev.clientY - r.top)/r.height*c.height;
+  let p = null;
+  if(y >= G.haut){
+    for(let m = G.lo; m <= G.hi && p === null; m++){ const k = G.pos[m]; if(k && k.noire && y < G.haut + G.kb*0.62 && x >= k.x && x < k.x + k.w) p = m; }
+    for(let m = G.lo; m <= G.hi && p === null; m++){ const k = G.pos[m]; if(k && !k.noire && x >= k.x && x < k.x + k.w) p = m; }
+  }else{
+    for(const R of G.rects){ if(x >= R.x && x < R.x + R.w && y >= R.y && y < R.y + R.h){ p = R.p; break; } }
+  }
+  if(p !== null){ ev.preventDefault(); tcSonner(p); }
+});
 document.querySelectorAll('#tcVit button').forEach(b => b.addEventListener('click', () => {
   poserReglage('vitesse', parseFloat(b.dataset.v));
 }));
@@ -4125,6 +4427,7 @@ function tcClavier(lo, hi, W){
 }
 function tcDessiner(){
   const t = tcTemps(), data = tc.data;
+  tcDessinerOnde(t);
   // ---- l'accord en cours ----
   const acc = data ? data.accords : [];
   let ia = -1; for(let i = 0; i < acc.length; i++){ if(acc[i].t0 <= t && t < acc[i].t1){ ia = i; break; } }
@@ -4135,6 +4438,7 @@ function tcDessiner(){
   const c = $('#tcPiano'), d = tcCaler(c), g = c.getContext('2d'), W = c.width, H = c.height;
   g.fillStyle = '#0b0d0c'; g.fillRect(0, 0, W, H);
   if(!data || !data.notes.length){
+    tc.geo = null;
     g.fillStyle = '#7a8790'; g.font = (13*d) + 'px system-ui, sans-serif'; g.textAlign = 'center';
     g.fillText(data ? 'Aucune note trouvée.' : 'Les notes tomberont ici.', W/2, H/2); g.textAlign = 'left';
   }else{
@@ -4142,65 +4446,134 @@ function tcDessiner(){
     lo = Math.max(21, lo - 2); hi = Math.min(108, hi + 2);
     if(hi - lo < 24){ const m = (lo + hi) >> 1; lo = Math.max(21, m - 12); hi = Math.min(108, m + 12); }
     const pos = tcClavier(lo, hi, W), kb = Math.round(H*0.15), haut = H - kb, L = 3.0;
+    const rects = []; tc.geo = {lo, hi, pos, kb, haut, rects};
     g.strokeStyle = 'rgba(255,255,255,.06)'; g.lineWidth = 1;
     for(const b of (data.temps || [])){ if(b < t || b > t + L) continue; const y = haut - (b - t)/L*haut; g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
-    const actives = new Set();
+    const actives = new Map();   // touche -> couleur de l'instrument qui la joue
     g.font = '600 ' + (10*d) + 'px ui-monospace, Menlo, monospace'; g.textAlign = 'center';
     for(const n of data.notes){
       if(n.t1 < t - 0.05 || n.t0 > t + L) continue;
+      const ins = n.i || 'mix'; if(tc.cache.has(ins)) continue;
       const k = pos[n.p]; if(!k) continue;
       const y0 = Math.min(haut, haut - (n.t0 - t)/L*haut), y1 = Math.max(0, haut - (n.t1 - t)/L*haut);
-      const joue = n.t0 <= t && t < n.t1; if(joue) actives.add(n.p);
-      g.fillStyle = joue ? '#ffd27f' : (k.noire ? 'rgba(240,168,48,.75)' : 'rgba(240,168,48,.95)');
-      g.fillRect(k.x + 1*d, y1, Math.max(2, k.w - 2*d), Math.max(2, y0 - y1));
-      if(y0 - y1 > 14*d && k.w > 11*d){ g.fillStyle = '#241503'; g.fillText(tcNomNote(n.p), k.x + k.w/2, y0 - 4*d); }
+      const coul = TC_COULEUR[ins] || '#f0a830';
+      const joue = n.t0 <= t && t < n.t1; if(joue) actives.set(n.p, coul);
+      g.globalAlpha = joue ? 1 : (k.noire ? 0.78 : 0.95);
+      g.fillStyle = coul; g.fillRect(k.x + 1*d, y1, Math.max(2, k.w - 2*d), Math.max(2, y0 - y1));
+      rects.push({x: k.x, y: y1, w: k.w, h: Math.max(6*d, y0 - y1), p: n.p});
+      if(joue){ g.fillStyle = 'rgba(255,255,255,.45)'; g.fillRect(k.x + 1*d, y1, Math.max(2, k.w - 2*d), Math.max(2, y0 - y1)); }
+      g.globalAlpha = 1;
+      if(y0 - y1 > 14*d && k.w > 11*d){ g.fillStyle = '#16120a'; g.fillText(tcNomNote(n.p), k.x + k.w/2, y0 - 4*d); }
     }
     g.textAlign = 'left';
+    const touche = tc.touche && performance.now() < tc.touche.jusqua ? tc.touche.p : null;
+    if(touche !== null) actives.set(touche, '#ffffff');
     for(let m = lo; m <= hi; m++){ const k = pos[m]; if(!k || k.noire) continue;
-      g.fillStyle = actives.has(m) ? '#f0a830' : '#ece9e0'; g.fillRect(k.x + 0.5, haut, k.w - 1, kb);
+      g.fillStyle = actives.get(m) || '#ece9e0'; g.fillRect(k.x + 0.5, haut, k.w - 1, kb);
       if(m % 12 === 0){ g.fillStyle = '#6b665c'; g.font = (9*d) + 'px ui-monospace, Menlo, monospace'; g.fillText(tcNomNote(m), k.x + 2*d, H - 4*d); } }
     for(let m = lo; m <= hi; m++){ const k = pos[m]; if(!k || !k.noire) continue;
-      g.fillStyle = actives.has(m) ? '#c97a1e' : '#1d1c1a'; g.fillRect(k.x, haut, k.w, kb*0.62); }
+      g.fillStyle = actives.get(m) || '#1d1c1a'; g.fillRect(k.x, haut, k.w, kb*0.62); }
     g.fillStyle = '#f0a830'; g.fillRect(0, haut - 1*d, W, 2*d);
+    if(touche !== null && pos[touche]){   // le nom de la touche jouée, au-dessus du clavier
+      const k = pos[touche], lab = tcNomNote(touche);
+      g.font = '700 ' + (14*d) + 'px ui-monospace, Menlo, monospace'; g.textAlign = 'center';
+      const bw = (lab.length*9 + 14)*d, bx = Math.max(bw/2, Math.min(W - bw/2, k.x + k.w/2));
+      g.fillStyle = '#ffffff'; g.fillRect(bx - bw/2, haut - 30*d, bw, 22*d);
+      g.fillStyle = '#0b0d0c'; g.fillText(lab, bx, haut - 14*d); g.textAlign = 'left';
+    }
   }
   // ---- la basse sur les cordes ----
   const ct = $('#tcTab'), dt = tcCaler(ct), gt = ct.getContext('2d'), w2 = ct.width, h2 = ct.height;
   gt.fillStyle = '#0b0d0c'; gt.fillRect(0, 0, w2, h2);
   const cordes = data && data.cordes && data.cordes.length ? data.cordes.slice().reverse() : ['G','D','A','E'];
-  const marge = 14*dt, pas = (h2 - 2*marge) / Math.max(1, cordes.length - 1), px = Math.round(w2*0.22), av = 4, ar = 1;
+  // Fenêtre adaptée à la largeur (David 01.10 : « on ne voit pas les numéros de fret ») : au moins ~150 px
+  // par seconde, sinon sur un téléphone 4 s tenaient dans 290 px et les cases se chevauchaient.
+  const marge = 14*dt, pas = (h2 - 2*marge) / Math.max(1, cordes.length - 1), px = Math.round(w2*0.22);
+  const av = Math.max(1.5, Math.min(4, (w2 - px) / (150*dt))), ar = av / 4;
   gt.font = '600 ' + (11*dt) + 'px ui-monospace, Menlo, monospace'; gt.textBaseline = 'middle';
   cordes.forEach((nomC, i) => { const y = marge + i*pas; gt.strokeStyle = 'rgba(255,255,255,.22)'; gt.lineWidth = 1*dt;
     gt.beginPath(); gt.moveTo(18*dt, y); gt.lineTo(w2, y); gt.stroke(); gt.fillStyle = '#7a8790'; gt.fillText(nomC, 4*dt, y); });
   gt.strokeStyle = '#f0a830'; gt.lineWidth = 2*dt; gt.beginPath(); gt.moveTo(px, 4*dt); gt.lineTo(px, h2 - 4*dt); gt.stroke();
-  if(!data || !data.basse || !data.basse.length){
+  if(data && tc.cache.has('basse')){ /* cachée par la légende */ }
+  else if(!data || !data.basse || !data.basse.length){
     gt.fillStyle = '#7a8790'; gt.textAlign = 'center';
     gt.fillText(data ? 'Pas de basse séparée : onglet Pistes, puis Transcrire à nouveau.' : 'La basse défilera ici, sur les cordes.', (w2 + px)/2, h2/2);
     gt.textAlign = 'left';
   }else{
-    const X = tt => tt >= t ? px + (tt - t)/av*(w2 - px) : px - (t - tt)/ar*px;
+    const gauche = 30*dt;   // les notes passées s'arrêtent avant le nom des cordes
+    const X = tt => tt >= t ? px + (tt - t)/av*(w2 - px) : px - (t - tt)/ar*(px - gauche);
     gt.textAlign = 'center';
+    const vis = [];
     for(const n of data.basse){
       if(n.t1 < t - ar || n.t0 > t + av) continue;
       const i = cordes.indexOf(n.corde); if(i < 0) continue;
-      const y = marge + i*pas, x0 = X(n.t0), x1 = X(n.t1), joue = n.t0 <= t && t < n.t1;
-      gt.strokeStyle = joue ? '#ffd27f' : 'rgba(111,183,255,.55)'; gt.lineWidth = 3*dt;
-      gt.beginPath(); gt.moveTo(x0, y); gt.lineTo(Math.max(x0, x1), y); gt.stroke();
-      const lab = String(n.case), bw = (lab.length*7 + 8)*dt;
-      gt.fillStyle = joue ? '#ffd27f' : '#6fb7ff'; gt.fillRect(x0 - bw/2, y - 8*dt, bw, 16*dt);
-      gt.fillStyle = '#0b0d0c'; gt.fillText(lab, x0, y + 0.5*dt);
+      vis.push({n, y: marge + i*pas, x0: X(n.t0), x1: X(n.t1), joue: n.t0 <= t && t < n.t1});
     }
+    // note douteuse (une seule des deux méthodes l'a entendue, 02.10) : pâle, pour ne pas la croire sur parole
+    const alpha = v => v.n.sur === false ? 0.4 : 1;
+    for(const v of vis){   // les traits de durée d'abord, les cases par-dessus
+      gt.globalAlpha = alpha(v);
+      gt.strokeStyle = v.joue ? '#ffd27f' : 'rgba(111,183,255,.5)'; gt.lineWidth = 4*dt;
+      gt.beginPath(); gt.moveTo(v.x0, v.y); gt.lineTo(Math.max(v.x0, v.x1), v.y); gt.stroke();
+    }
+    // de la plus lointaine à la plus proche : la prochaine à jouer est toujours dessinée au-dessus
+    vis.sort((a, b) => b.n.t0 - a.n.t0);
+    const hb = Math.min(24*dt, pas*0.95);
+    gt.font = '700 ' + Math.round(hb*0.62) + 'px ui-monospace, Menlo, monospace';
+    for(const v of vis){
+      const lab = String(v.n.case), bw = Math.max(hb, (lab.length*0.62*hb*0.62) + 12*dt);
+      gt.globalAlpha = alpha(v);
+      gt.fillStyle = v.joue ? '#ffd27f' : '#6fb7ff';
+      gt.beginPath(); gt.roundRect ? gt.roundRect(v.x0 - bw/2, v.y - hb/2, bw, hb, 4*dt) : gt.rect(v.x0 - bw/2, v.y - hb/2, bw, hb); gt.fill();
+      gt.strokeStyle = '#0b0d0c'; gt.lineWidth = 1.5*dt; gt.stroke();
+      gt.fillStyle = '#0b0d0c'; gt.fillText(lab, v.x0, v.y + 1*dt);
+    }
+    gt.globalAlpha = 1;
     gt.textAlign = 'left';
   }
   gt.textBaseline = 'alphabetic';
+  tcBatterie(t, data, av, ar);
+}
+// La batterie, fût par fût, qui défile comme la basse (David 02.10 : « qu'on voie aussi les batteries, snare, kick »)
+function tcBatterie(t, data, av, ar){
+  const c = $('#tcBatt'); if(!c) return;
+  const has = data && data.batterie && data.batterie.length;
+  c.hidden = !has || tc.cache.has('batterie');
+  if(c.hidden) return;
+  const d = tcCaler(c), g = c.getContext('2d'), W = c.width, H = c.height;
+  g.fillStyle = '#0b0d0c'; g.fillRect(0, 0, W, H);
+  const marge = 10*d, pas = (H - 2*marge) / (TC_FUTS.length - 1), px = Math.round(W*0.22), gauche = 46*d;
+  const ligne = {}; TC_FUTS.forEach(([k], i) => ligne[k] = marge + i*pas);
+  g.font = '600 ' + (10*d) + 'px ui-monospace, Menlo, monospace'; g.textBaseline = 'middle';
+  for(const [k, nom, coul] of TC_FUTS){
+    g.strokeStyle = 'rgba(255,255,255,.12)'; g.lineWidth = 1*d; g.beginPath(); g.moveTo(gauche, ligne[k]); g.lineTo(W, ligne[k]); g.stroke();
+    g.fillStyle = coul; g.fillText(nom, 4*d, ligne[k]);
+  }
+  g.strokeStyle = '#f0a830'; g.lineWidth = 2*d; g.beginPath(); g.moveTo(px, 2*d); g.lineTo(px, H - 2*d); g.stroke();
+  const X = tt => tt >= t ? px + (tt - t)/av*(W - px) : px - (t - tt)/ar*(px - gauche);
+  const couleur = {}; TC_FUTS.forEach(([k, , cl]) => couleur[k] = cl);
+  const r0 = Math.min(7*d, pas*0.42);
+  for(const h of data.batterie){
+    if(h.t < t - ar || h.t > t + av) continue;
+    const y = ligne[h.k]; if(y === undefined) continue;
+    const x = X(h.t), frappe = Math.abs(h.t - t) < 0.07;
+    g.globalAlpha = 0.45 + 0.55*h.v;
+    g.fillStyle = frappe ? '#ffffff' : couleur[h.k];
+    g.beginPath(); g.arc(x, y, frappe ? r0*1.35 : r0*(0.7 + 0.3*h.v), 0, Math.PI*2); g.fill();
+  }
+  g.globalAlpha = 1; g.textBaseline = 'alphabetic';
 }
 
 const NECESSITE_MAC = ['separer', 'eclaterBatterie', 'exporterPistes', 'pistesIphone', 'exporterTranches', 'transcrire',
+                       'importerLien', 'tcImporterLien', 'tcVersNuage',
                        'enregistrer', 'versAbleton'];   // projets : désormais gardés sur l'appareil, plus « (Mac) »
 function appliquerAutonome(){
   if(!document.getElementById('styleAutonome')){
     const st = document.createElement('style'); st.id = 'styleAutonome';
     st.textContent = 'button.necessiteMac{opacity:.45}'
-                   + 'body.autonome #telBouton,body.autonome #bandeauMain{display:none!important}';
+                   + 'body.autonome #telBouton,body.autonome #bandeauMain{display:none!important}'
+                   // Transcrire sans Mac (02.10) : on ne garde que ce qui sert, la place va au piano
+                   + 'body.autonome #panneauTranscrire .lien-rangee,body.autonome #transcrire,body.autonome #tcVersNuage{display:none!important}';
     document.head.appendChild(st);
   }
   for(const id of NECESSITE_MAC){
@@ -4491,7 +4864,7 @@ function etatCourant(){
 async function listerProjets(sel2){
   let noms;
   if(await sonderServeur()){ const r = await fetch('/api/projets'); noms = await r.json(); }
-  else noms = await BDD.projets();   // sans Mac : les projets gardés sur l'appareil
+  else noms = (await BDD.projets()).filter(n => !String(n).startsWith('tc:'));   // sans Mac : les projets gardés sur l'appareil (pas les transcriptions)
   const s2 = $('#projet');
   s2.innerHTML = '<option value="">aucun</option>';
   for(const n of noms){
@@ -8970,7 +9343,10 @@ function grilleFermer(){
     'body.tel[data-ecran="onde"],body.tel[data-ecran="jouer"],body.tel[data-ecran="transcrire"]{padding-bottom:calc(64px + 68px + env(safe-area-inset-bottom,0px))}',
     'body.tel[data-ecran="transcrire"] #barreTel{display:flex}',
     'body.tel .tc-piano{height:34vh;min-height:180px}',
-    'body.tel .tc-tab{height:104px}',
+    'body.tel .tc-tab{height:112px}',
+    'body.tel .tc-batt{height:80px}',
+    'body.tel .tc-onde{height:52px}',
+    'body.tel #tcDebut,body.tel #tcRecul,body.tel #tcJouer,body.tel #tcAvance{display:none}',   // la barre du bas les a déjà
     'body.tel .tc-aide{display:none}',
     'body.tel.uneFonction{display:flex;flex-direction:column}',
     'body.tel .facade{display:none!important}',
